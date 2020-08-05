@@ -1,0 +1,394 @@
+// This file is part of pdn-heicfiletype-plus, a libheif-based HEIC
+// FileType plugin for Paint.NET.
+//
+// Copyright (C) 2020 Nicholas Hayes
+//
+// pdn-heicfiletype-plus is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// pdn-heicfiletype-plus is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+#include <stdint.h>
+#include <math.h>
+#include "ChromaSubsampling.h"
+#include "YUVConversionHelpers.h"
+#include <array>
+
+namespace
+{
+    struct YUVBlock
+    {
+        float y;
+        float u;
+        float v;
+    };
+
+    enum class YuvChannel
+    {
+        Y,
+        U,
+        V
+    };
+
+    float avifRoundf(float v)
+    {
+        return floorf(v + 0.5f);
+    }
+
+    uint8_t yuvToUNorm(YuvChannel chan, float v)
+    {
+        if (chan != YuvChannel::Y)
+        {
+            v += 0.5f;
+        }
+
+        if (v < 0.0f)
+        {
+            v = 0.0f;
+        }
+        else if (v > 1.0f)
+        {
+            v = 1.0f;
+        }
+
+        return  static_cast<uint8_t>(avifRoundf(v * 255.0f));
+    }
+
+    constexpr std::array<float, 256> BuildUint8ToFloatLookupTable()
+    {
+        std::array<float, 256> table = {};
+
+        for (size_t i = 0; i < table.size(); ++i)
+        {
+            table[i] = static_cast<float>(i) / 255.0f;
+        }
+
+        return table;
+    }
+
+    void ColorToYUV8(
+        const BitmapData* bgraImage,
+        const CICPColorData& colorInfo,
+        YUVChromaSubsampling yuvFormat,
+        uint8_t* yPlane,
+        intptr_t yPlaneStride,
+        uint8_t* uPlane,
+        intptr_t uPlaneStride,
+        uint8_t* vPlane,
+        intptr_t vPlaneStride)
+    {
+        YUVCoefficiants yuvCoefficiants;
+        GetYUVCoefficiants(colorInfo, yuvCoefficiants);
+
+        const float kr = yuvCoefficiants.kr;
+        const float kg = yuvCoefficiants.kg;
+        const float kb = yuvCoefficiants.kb;
+
+        YUVBlock yuvBlock[2][2];
+        float rgbPixel[3];
+
+        static constexpr std::array<float, 256> uint8ToFloatTable = BuildUint8ToFloatLookupTable();
+
+        for (int32_t imageY = 0; imageY < bgraImage->height; imageY += 2)
+        {
+            for (int32_t imageX = 0; imageX < bgraImage->width; imageX += 2)
+            {
+                int32_t blockWidth = 2, blockHeight = 2;
+                if ((imageX + 1) >= bgraImage->width)
+                {
+                    blockWidth = 1;
+                }
+                if ((imageY + 1) >= bgraImage->height)
+                {
+                    blockHeight = 1;
+                }
+
+                // Convert an entire 2x2 block to YUV, and populate any fully sampled channels as we go
+                for (int32_t blockY = 0; blockY < blockHeight; ++blockY)
+                {
+                    for (int32_t blockX = 0; blockX < blockWidth; ++blockX)
+                    {
+                        int32_t x = imageX + blockX;
+                        int32_t y = imageY + blockY;
+
+                        // Unpack RGB into normalized float
+
+                        const ColorBgra* pixel = reinterpret_cast<const ColorBgra*>(bgraImage->scan0 + (static_cast<int64_t>(y) * bgraImage->stride) + (x * sizeof(ColorBgra)));
+
+                        rgbPixel[0] = uint8ToFloatTable[pixel->r];
+                        rgbPixel[1] = uint8ToFloatTable[pixel->g];
+                        rgbPixel[2] = uint8ToFloatTable[pixel->b];
+
+                        // RGB -> YUV conversion
+                        float Y = (kr * rgbPixel[0]) + (kg * rgbPixel[1]) + (kb * rgbPixel[2]);
+                        yuvBlock[blockX][blockY].y = Y;
+                        yuvBlock[blockX][blockY].u = (rgbPixel[2] - Y) / (2 * (1 - kb));
+                        yuvBlock[blockX][blockY].v = (rgbPixel[0] - Y) / (2 * (1 - kr));
+
+                        yPlane[x + (y * yPlaneStride)] = yuvToUNorm(YuvChannel::Y, yuvBlock[blockX][blockY].y);
+
+                        if (yuvFormat == YUVChromaSubsampling::Subsampling444)
+                        {
+                            // YUV444, full chroma
+                            uPlane[x + (y * uPlaneStride)] = yuvToUNorm(YuvChannel::U, yuvBlock[blockX][blockY].u);
+                            vPlane[x + (y * vPlaneStride)] = yuvToUNorm(YuvChannel::V, yuvBlock[blockX][blockY].v);
+                        }
+
+                    }
+                }
+
+                // Populate any subsampled channels with averages from the 2x2 block
+                if (yuvFormat == YUVChromaSubsampling::Subsampling420)
+                {
+                    // YUV420, average 4 samples (2x2)
+
+                    float sumU = 0.0f;
+                    float sumV = 0.0f;
+                    for (int32_t bJ = 0; bJ < blockHeight; ++bJ)
+                    {
+                        for (int32_t bI = 0; bI < blockWidth; ++bI)
+                        {
+                            sumU += yuvBlock[bI][bJ].u;
+                            sumV += yuvBlock[bI][bJ].v;
+                        }
+                    }
+                    float totalSamples = static_cast<float>(blockWidth * blockHeight);
+                    float avgU = sumU / totalSamples;
+                    float avgV = sumV / totalSamples;
+
+                    int32_t x = imageX >> 1;
+                    int32_t y = imageY >> 1;
+
+                    uPlane[x + (y * uPlaneStride)] = yuvToUNorm(YuvChannel::U, avgU);
+                    vPlane[x + (y * vPlaneStride)] = yuvToUNorm(YuvChannel::V, avgV);
+
+                }
+                else if (yuvFormat == YUVChromaSubsampling::Subsampling422)
+                {
+                    // YUV422, average 2 samples (1x2), twice
+
+                    for (int32_t blockY = 0; blockY < blockHeight; ++blockY) {
+                        float sumU = 0.0f;
+                        float sumV = 0.0f;
+                        for (int32_t blockX = 0; blockX < blockWidth; ++blockX) {
+                            sumU += yuvBlock[blockX][blockY].u;
+                            sumV += yuvBlock[blockX][blockY].v;
+                        }
+                        float totalSamples = static_cast<float>(blockWidth);
+                        float avgU = sumU / totalSamples;
+                        float avgV = sumV / totalSamples;
+
+                        int32_t x = imageX >> 1;
+                        int32_t y = imageY + blockY;
+
+                        uPlane[x + (y * uPlaneStride)] = yuvToUNorm(YuvChannel::U, avgU);
+                        vPlane[x + (y * vPlaneStride)] = yuvToUNorm(YuvChannel::V, avgV);
+                    }
+                }
+            }
+        }
+    }
+
+    void MonoToY8(
+        const BitmapData* bgraImage,
+        uint8_t* yPlane,
+        intptr_t yPlaneStride)
+    {
+        for (int32_t y = 0; y < bgraImage->height; ++y)
+        {
+            const ColorBgra* src = reinterpret_cast<const ColorBgra*>(bgraImage->scan0 + (static_cast<int64_t>(y) * bgraImage->stride));
+            uint8_t* dst = &yPlane[y * yPlaneStride];
+
+            for (int32_t x = 0; x < bgraImage->width; ++x)
+            {
+                *dst = src->r;
+
+                src++;
+                dst++;
+            }
+        }
+    }
+
+    void AlphaToA8(
+        const BitmapData* bgraImage,
+        uint8_t* yPlane,
+        intptr_t yPlaneStride)
+    {
+        for (int32_t y = 0; y < bgraImage->height; ++y)
+        {
+            const ColorBgra* src = reinterpret_cast<const ColorBgra*>(bgraImage->scan0 + (static_cast<int64_t>(y) * bgraImage->stride));
+            uint8_t* dst = &yPlane[y * yPlaneStride];
+
+            for (int32_t x = 0; x < bgraImage->width; ++x)
+            {
+                *dst = src->a;
+
+                src++;
+                dst++;
+            }
+        }
+    }
+
+    Status CreateHeifImage(int width, int height, heif_colorspace colorspace, heif_chroma chroma, ScopedHeifImage& image)
+    {
+        heif_image* heifImage = nullptr;
+        heif_error error = heif_image_create(width, height, colorspace, chroma, &heifImage);
+
+        if (error.code != heif_error_Ok)
+        {
+            switch (error.code)
+            {
+            case heif_error_Memory_allocation_error:
+                return Status::OutOfMemory;
+            default:
+                return Status::UnknownError;
+            }
+        }
+
+        image.reset(heifImage);
+        return Status::Ok;
+    }
+
+    Status AddPlane(heif_image* image, heif_channel channel, int width, int height)
+    {
+        heif_error error = heif_image_add_plane(image, channel, width, height, 8);
+
+        if (error.code != heif_error_Ok)
+        {
+            switch (error.code)
+            {
+            case heif_error_Memory_allocation_error:
+                return Status::OutOfMemory;
+            default:
+                return Status::UnknownError;
+            }
+        }
+
+        return Status::Ok;
+    }
+
+    Status CreateImagePlanes(heif_image* image, int width, int height, heif_colorspace colorspace, bool hasTransparency)
+    {
+        Status status = AddPlane(image, heif_channel_Y, width, height);
+
+        if (status == Status::Ok)
+        {
+            if (colorspace == heif_colorspace_YCbCr)
+            {
+                status = AddPlane(image, heif_channel_Cb, width, height);
+
+                if (status == Status::Ok)
+                {
+                    status = AddPlane(image, heif_channel_Cr, width, height);
+                }
+            }
+
+            if (hasTransparency && status == Status::Ok)
+            {
+                status = AddPlane(image, heif_channel_Alpha, width, height);
+            }
+        }
+
+        return status;
+    }
+}
+
+
+Status ConvertToHeifImage(
+    const BitmapData* bgraImage,
+    bool hasTransparency,
+    const CICPColorData& colorInfo,
+    YUVChromaSubsampling yuvFormat,
+    ScopedHeifImage& convertedImage)
+{
+    heif_colorspace colorspace;
+    heif_chroma chroma;
+
+    switch (yuvFormat)
+    {
+    case YUVChromaSubsampling::Subsampling400:
+        chroma = heif_chroma_monochrome;
+        colorspace = heif_colorspace_monochrome;
+        break;
+    case YUVChromaSubsampling::Subsampling420:
+        chroma = heif_chroma_420;
+        colorspace = heif_colorspace_YCbCr;
+        break;
+    case YUVChromaSubsampling::Subsampling422:
+        chroma = heif_chroma_422;
+        colorspace = heif_colorspace_YCbCr;
+        break;
+    case YUVChromaSubsampling::Subsampling444:
+        chroma = heif_chroma_444;
+        colorspace = heif_colorspace_YCbCr;
+        break;
+    default:
+        return Status::UnknownYUVFormat;
+    }
+
+    ScopedHeifImage heifImage;
+
+    Status status = CreateHeifImage(bgraImage->width, bgraImage->height, colorspace, chroma, heifImage);
+
+    if (status == Status::Ok)
+    {
+        status = CreateImagePlanes(heifImage.get(), bgraImage->width, bgraImage->height, colorspace, hasTransparency);
+
+        if (status == Status::Ok)
+        {
+            if (colorspace == heif_colorspace_monochrome)
+            {
+                int yPlaneStride;
+                uint8_t* yPlane = heif_image_get_plane(heifImage.get(), heif_channel_Y, &yPlaneStride);
+
+                MonoToY8(
+                    bgraImage,
+                    yPlane,
+                    static_cast<size_t>(yPlaneStride));
+            }
+            else
+            {
+                int yPlaneStride;
+                uint8_t* yPlane = heif_image_get_plane(heifImage.get(), heif_channel_Y, &yPlaneStride);
+                int uPlaneStride;
+                uint8_t* uPlane = heif_image_get_plane(heifImage.get(), heif_channel_Cb, &uPlaneStride);
+                int vPlaneStride;
+                uint8_t* vPlane = heif_image_get_plane(heifImage.get(), heif_channel_Cr, &vPlaneStride);
+
+                ColorToYUV8(
+                    bgraImage,
+                    colorInfo,
+                    yuvFormat,
+                    yPlane,
+                    static_cast<size_t>(yPlaneStride),
+                    uPlane,
+                    static_cast<size_t>(uPlaneStride),
+                    vPlane,
+                    static_cast<size_t>(vPlaneStride));
+            }
+
+            if (hasTransparency)
+            {
+                int alphaPlaneStride;
+                uint8_t* alphaPlane = heif_image_get_plane(heifImage.get(), heif_channel_Alpha, &alphaPlaneStride);
+
+                AlphaToA8(
+                    bgraImage,
+                    alphaPlane,
+                    static_cast<size_t>(alphaPlaneStride));
+            }
+
+            convertedImage.swap(heifImage);
+        }
+    }
+
+    return status;
+}
