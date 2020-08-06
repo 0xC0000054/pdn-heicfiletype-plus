@@ -190,6 +190,7 @@
     <ClInclude Include="HeicReader.h" />
     <ClInclude Include="HeicWriter.h" />
     <ClInclude Include="ProgressSteps.h" />
+    <ClInclude Include="resource.h" />
     <ClInclude Include="scoped.h" />
     <ClInclude Include="YUVConversionHelpers.h" />
   </ItemGroup>
@@ -202,6 +203,9 @@
     <ClCompile Include="HeicReader.cpp" />
     <ClCompile Include="HeicWriter.cpp" />
     <ClCompile Include="YUVConversionHelpers.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="version.rc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
