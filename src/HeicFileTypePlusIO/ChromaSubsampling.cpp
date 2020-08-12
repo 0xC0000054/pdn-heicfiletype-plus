@@ -50,6 +50,13 @@
 
 namespace
 {
+    struct ColorRgb24Float
+    {
+        float r;
+        float g;
+        float b;
+    };
+
     struct YUVBlock
     {
         float y;
@@ -119,7 +126,7 @@ namespace
         const float kb = yuvCoefficiants.kb;
 
         YUVBlock yuvBlock[2][2];
-        float rgbPixel[3];
+        ColorRgb24Float rgbPixel;
 
         static constexpr std::array<float, 256> uint8ToFloatTable = BuildUint8ToFloatLookupTable();
 
@@ -149,15 +156,15 @@ namespace
 
                         const ColorBgra* pixel = reinterpret_cast<const ColorBgra*>(bgraImage->scan0 + (static_cast<int64_t>(y) * bgraImage->stride) + (x * sizeof(ColorBgra)));
 
-                        rgbPixel[0] = uint8ToFloatTable[pixel->r];
-                        rgbPixel[1] = uint8ToFloatTable[pixel->g];
-                        rgbPixel[2] = uint8ToFloatTable[pixel->b];
+                        rgbPixel.r = uint8ToFloatTable[pixel->r];
+                        rgbPixel.g = uint8ToFloatTable[pixel->g];
+                        rgbPixel.b = uint8ToFloatTable[pixel->b];
 
                         // RGB -> YUV conversion
-                        float Y = (kr * rgbPixel[0]) + (kg * rgbPixel[1]) + (kb * rgbPixel[2]);
+                        float Y = (kr * rgbPixel.r) + (kg * rgbPixel.g) + (kb * rgbPixel.b);
                         yuvBlock[blockX][blockY].y = Y;
-                        yuvBlock[blockX][blockY].u = (rgbPixel[2] - Y) / (2 * (1 - kb));
-                        yuvBlock[blockX][blockY].v = (rgbPixel[0] - Y) / (2 * (1 - kr));
+                        yuvBlock[blockX][blockY].u = (rgbPixel.b - Y) / (2 * (1 - kb));
+                        yuvBlock[blockX][blockY].v = (rgbPixel.r - Y) / (2 * (1 - kr));
 
                         yPlane[x + (y * yPlaneStride)] = yuvToUNorm(YuvChannel::Y, yuvBlock[blockX][blockY].y);
 
