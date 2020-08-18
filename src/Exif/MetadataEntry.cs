@@ -63,16 +63,6 @@ namespace HeicFileTypePlus.Exif
             }
         }
 
-        public byte[] GetData()
-        {
-            return (byte[])this.data.Clone();
-        }
-
-        public byte[] GetDataReadOnly()
-        {
-            return this.data;
-        }
-
         public PaintDotNet.Imaging.ExifPropertyItem CreateExifPropertyItem()
         {
             PaintDotNet.Imaging.ExifSection exifSection;
@@ -116,6 +106,16 @@ namespace HeicFileTypePlus.Exif
             }
 
             return this.Section == other.Section && this.TagId == other.TagId;
+        }
+
+        public byte[] GetData()
+        {
+            return (byte[])this.data.Clone();
+        }
+
+        public byte[] GetDataReadOnly()
+        {
+            return this.data;
         }
 
         public override int GetHashCode()
