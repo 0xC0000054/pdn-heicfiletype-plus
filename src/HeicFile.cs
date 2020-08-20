@@ -156,6 +156,10 @@ namespace HeicFileTypePlus
                     if (metadataEntries != null)
                     {
                         metadataEntries.Remove(MetadataKeys.Image.InterColorProfile);
+                        // The HEIF specification states that the EXIF orientation tag is only
+                        // informational and should not be used to rotate the image.
+                        // See https://github.com/strukturag/libheif/issues/227#issuecomment-642165942
+                        metadataEntries.Remove(MetadataKeys.Image.Orientation);
 
                         foreach (MetadataEntry item in metadataEntries)
                         {
