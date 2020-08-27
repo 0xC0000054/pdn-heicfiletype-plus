@@ -179,7 +179,7 @@ Status __stdcall GetCICPColorData(heif_image_handle* imageHandle, CICPColorData*
     data->matrixCoefficients = nclxProfile->matrix_coefficients;
     data->fullRange = nclxProfile->full_range_flag;
 
-    free(nclxProfile);
+    heif_nclx_color_profile_free(nclxProfile);
 
     return Status::Ok;
 }
