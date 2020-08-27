@@ -365,12 +365,31 @@ namespace
 
         return status;
     }
+
+    bool HasTransparency(const BitmapData* image)
+    {
+        for (int32_t y = 0; y < image->height; y++)
+        {
+            ColorBgra* ptr = reinterpret_cast<ColorBgra*>(image->scan0 + (static_cast<intptr_t>(y) * image->stride));
+
+            for (int32_t x = 0; x < image->width; x++)
+            {
+                if (ptr->a < 255)
+                {
+                    return true;
+                }
+
+                ptr++;
+            }
+        }
+
+        return false;
+    }
 }
 
 
 Status ConvertToHeifImage(
     const BitmapData* bgraImage,
-    bool hasTransparency,
     const CICPColorData& colorInfo,
     YUVChromaSubsampling yuvFormat,
     ScopedHeifImage& convertedImage)
@@ -406,6 +425,8 @@ Status ConvertToHeifImage(
 
     if (status == Status::Ok)
     {
+        const bool hasTransparency = HasTransparency(bgraImage);
+
         status = CreateImagePlanes(heifImage.get(), bgraImage->width, bgraImage->height, colorspace, chroma, hasTransparency);
 
         if (status == Status::Ok)

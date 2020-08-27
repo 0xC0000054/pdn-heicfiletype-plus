@@ -25,7 +25,6 @@
 
 Status ConvertToHeifImage(
     const BitmapData* bgraImage,
-    bool hasTransparency,
     const CICPColorData& colorInfo,
     YUVChromaSubsampling yuvFormat,
     ScopedHeifImage& convertedImage);

@@ -23,26 +23,6 @@
 
 namespace
 {
-    bool HasTransparency(const BitmapData* image)
-    {
-        for (int32_t y = 0; y < image->height; y++)
-        {
-            ColorBgra* ptr = reinterpret_cast<ColorBgra*>(image->scan0 + (static_cast<intptr_t>(y) * image->stride));
-
-            for (int32_t x = 0; x < image->width; x++)
-            {
-                if (ptr->a < 255)
-                {
-                    return true;
-                }
-
-                ptr++;
-            }
-        }
-
-        return false;
-    }
-
     Status GetEncoder(heif_context* context, ScopedHeifEncoder& scopedEncoder)
     {
         if (!context)
@@ -297,13 +277,11 @@ Status HeicEncoder::Encode(
         }
     }
 
-    const bool hasTransparency = HasTransparency(input);
-
     try
     {
         ScopedHeifImage yuvImage;
 
-        Status status = ConvertToHeifImage(input, hasTransparency, colorData, options->yuvFormat, yuvImage);
+        Status status = ConvertToHeifImage(input, colorData, options->yuvFormat, yuvImage);
 
         if (status == Status::Ok)
         {
