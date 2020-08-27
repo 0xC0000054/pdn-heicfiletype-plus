@@ -42,28 +42,28 @@ extern "C" {
 
 
 #if defined(_MSC_VER) && !defined(LIBHEIF_STATIC_BUILD)
-  #ifdef LIBHEIF_EXPORTS
-  #define LIBHEIF_API __declspec(dllexport)
-  #else
-  #define LIBHEIF_API __declspec(dllimport)
-  #endif
-#elif defined(HAVE_VISIBILITY) && HAVE_VISIBILITY
-  #ifdef LIBHEIF_EXPORTS
-  #define LIBHEIF_API __attribute__((__visibility__("default")))
-  #else
-  #define LIBHEIF_API
-  #endif
+#ifdef LIBHEIF_EXPORTS
+#define LIBHEIF_API __declspec(dllexport)
 #else
-  #define LIBHEIF_API
+#define LIBHEIF_API __declspec(dllimport)
+#endif
+#elif defined(HAVE_VISIBILITY) && HAVE_VISIBILITY
+#ifdef LIBHEIF_EXPORTS
+#define LIBHEIF_API __attribute__((__visibility__("default")))
+#else
+#define LIBHEIF_API
+#endif
+#else
+#define LIBHEIF_API
 #endif
 
-#define heif_fourcc(a,b,c,d) ((a<<24) | (b<<16) | (c<<8) | d)
+#define heif_fourcc(a, b, c, d) ((a<<24) | (b<<16) | (c<<8) | d)
 
 
 /* === version numbers === */
 
 // Version string of linked libheif library.
-LIBHEIF_API const char *heif_get_version(void);
+LIBHEIF_API const char* heif_get_version(void);
 // Numeric version of linked libheif library, encoded as 0xHHMMLL00 = HH.MM.LL.
 LIBHEIF_API uint32_t heif_get_version_number(void);
 
@@ -83,7 +83,8 @@ struct heif_image_handle;
 struct heif_image;
 
 
-enum heif_error_code {
+enum heif_error_code
+{
   // Everything ok, no error occurred.
   heif_error_Ok = 0,
 
@@ -116,7 +117,8 @@ enum heif_error_code {
 };
 
 
-enum heif_suberror_code {
+enum heif_suberror_code
+{
   // no further information available
   heif_suberror_Unspecified = 0,
 
@@ -257,7 +259,6 @@ enum heif_suberror_code {
 };
 
 
-
 struct heif_error
 {
   // main error category
@@ -277,7 +278,8 @@ typedef uint32_t heif_item_id;
 
 // ========================= file type check ======================
 
-enum heif_filetype_result {
+enum heif_filetype_result
+{
   heif_filetype_no,
   heif_filetype_yes_supported,   // it is heif and can be read by libheif
   heif_filetype_yes_unsupported, // it is heif, but cannot be read by libheif
@@ -289,7 +291,8 @@ LIBHEIF_API
 enum heif_filetype_result heif_check_filetype(const uint8_t* data, int len);
 
 
-enum heif_brand {
+enum heif_brand
+{
   heif_unknown_brand,
   heif_heic, // the usual HEIF images
   heif_heix, // 10bit images, or anything that uses h265 with range extension
@@ -346,26 +349,29 @@ void heif_context_free(struct heif_context*);
 
 struct heif_reading_options;
 
-enum heif_reader_grow_status {
+enum heif_reader_grow_status
+{
   heif_reader_grow_status_size_reached,   // requested size has been reached, we can read until this point
   heif_reader_grow_status_timeout,        // size has not been reached yet, but it may still grow further
   heif_reader_grow_status_size_beyond_eof // size has not been reached and never will. The file has grown to its full size
 };
 
-struct heif_reader {
+struct heif_reader
+{
   // API version supported by this reader
   int reader_api_version;
 
   // --- version 1 functions ---
-  int64_t (*get_position)(void* userdata);
+  int64_t (* get_position)(void* userdata);
 
   // The functions read(), and seek() return 0 on success.
   // Generally, libheif will make sure that we do not read past the file size.
-  int (*read)(void* data,
-              size_t size,
-              void* userdata);
-  int (*seek)(int64_t position,
-              void* userdata);
+  int (* read)(void* data,
+               size_t size,
+               void* userdata);
+
+  int (* seek)(int64_t position,
+               void* userdata);
 
   // When calling this function, libheif wants to make sure that it can read the file
   // up to 'target_size'. This is useful when the file is currently downloaded and may
@@ -375,7 +381,7 @@ struct heif_reader {
   // Even if your input files will not grow, you will have to implement at least
   // detection whether the target_size is above the (fixed) file length
   // (in this case, return 'size_beyond_eof').
-  enum heif_reader_grow_status (*wait_for_file_size)(int64_t target_size, void* userdata);
+  enum heif_reader_grow_status (* wait_for_file_size)(int64_t target_size, void* userdata);
 };
 
 
@@ -510,14 +516,16 @@ struct heif_error heif_image_handle_get_depth_image_handle(const struct heif_ima
                                                            struct heif_image_handle** out_depth_handle);
 
 
-enum heif_depth_representation_type {
+enum heif_depth_representation_type
+{
   heif_depth_representation_type_uniform_inverse_Z = 0,
   heif_depth_representation_type_uniform_disparity = 1,
   heif_depth_representation_type_uniform_Z = 2,
   heif_depth_representation_type_nonuniform_disparity = 3
 };
 
-struct heif_depth_representation_info {
+struct heif_depth_representation_info
+{
   uint8_t version;
 
   // version 1 fields
@@ -611,11 +619,12 @@ struct heif_error heif_image_handle_get_metadata(const struct heif_image_handle*
                                                  heif_item_id metadata_id,
                                                  void* out_data);
 
-enum heif_color_profile_type {
+enum heif_color_profile_type
+{
   heif_color_profile_type_not_present = 0,
-  heif_color_profile_type_nclx = heif_fourcc('n','c','l','x'),
-  heif_color_profile_type_rICC = heif_fourcc('r','I','C','C'),
-  heif_color_profile_type_prof = heif_fourcc('p','r','o','f')
+  heif_color_profile_type_nclx = heif_fourcc('n', 'c', 'l', 'x'),
+  heif_color_profile_type_rICC = heif_fourcc('r', 'I', 'C', 'C'),
+  heif_color_profile_type_prof = heif_fourcc('p', 'r', 'o', 'f')
 };
 
 
@@ -631,16 +640,24 @@ struct heif_error heif_image_handle_get_raw_color_profile(const struct heif_imag
                                                           void* out_data);
 
 
-enum heif_color_primaries {
+enum heif_color_primaries
+{
   heif_color_primaries_ITU_R_BT_709_5 = 1, // g=0.3;0.6, b=0.15;0.06, r=0.64;0.33, w=0.3127,0.3290
   heif_color_primaries_unspecified = 2,
   heif_color_primaries_ITU_R_BT_470_6_System_M = 4,
   heif_color_primaries_ITU_R_BT_470_6_System_B_G = 5,
   heif_color_primaries_ITU_R_BT_601_6 = 6,
-  heif_color_primaries_SMPTE_240M = 7
+  heif_color_primaries_SMPTE_240M = 7,
+  heif_color_primaries_generic_film = 8,
+  heif_color_primaries_ITU_R_BT_2020_2_and_2100_0 = 9,
+  heif_color_primaries_SMPTE_ST_428_1 = 10,
+  heif_color_primaries_SMPTE_RP_431_2 = 11,
+  heif_color_primaries_SMPTE_EG_432_1 = 12,
+  heif_color_primaries_EBU_Tech_3213_E = 22
 };
 
-enum heif_transfer_characteristics {
+enum heif_transfer_characteristics
+{
   heif_transfer_characteristic_ITU_R_BT_709_5 = 1,
   heif_transfer_characteristic_unspecified = 2,
   heif_transfer_characteristic_ITU_R_BT_470_6_System_M = 4,
@@ -648,23 +665,38 @@ enum heif_transfer_characteristics {
   heif_transfer_characteristic_ITU_R_BT_601_6 = 6,
   heif_transfer_characteristic_SMPTE_240M = 7,
   heif_transfer_characteristic_linear = 8,
+  heif_transfer_characteristic_logarithmic_100 = 9,
+  heif_transfer_characteristic_logarithmic_100_sqrt10 = 10,
   heif_transfer_characteristic_IEC_61966_2_4 = 11,
   heif_transfer_characteristic_ITU_R_BT_1361 = 12,
-  heif_transfer_characteristic_IEC_61966_2_1 = 13
+  heif_transfer_characteristic_IEC_61966_2_1 = 13,
+  heif_transfer_characteristic_ITU_R_BT_2020_2_10bit = 14,
+  heif_transfer_characteristic_ITU_R_BT_2020_2_12bit = 15,
+  heif_transfer_characteristic_ITU_R_BT_2100_0_PQ = 16,
+  heif_transfer_characteristic_SMPTE_ST_428_1 = 17,
+  heif_transfer_characteristic_ITU_R_BT_2100_0_HLG = 18
 };
 
-enum heif_matrix_coefficients {
+enum heif_matrix_coefficients
+{
   heif_matrix_coefficients_RGB_GBR = 0,
-  heif_matrix_coefficients_ITU_R_BT_709_5 = 1,
+  heif_matrix_coefficients_ITU_R_BT_709_5 = 1,  // TODO: or 709-6 according to h.273
   heif_matrix_coefficients_unspecified = 2,
   heif_matrix_coefficients_US_FCC_T47 = 4,
   heif_matrix_coefficients_ITU_R_BT_470_6_System_B_G = 5,
-  heif_matrix_coefficients_ITU_R_BT_601_6 = 6,
+  heif_matrix_coefficients_ITU_R_BT_601_6 = 6,  // TODO: or 601-7 according to h.273
   heif_matrix_coefficients_SMPTE_240M = 7,
-  heif_matrix_coefficients_YCgCo = 8
+  heif_matrix_coefficients_YCgCo = 8,
+  heif_matrix_coefficients_ITU_R_BT_2020_2_non_constant_luminance = 9,
+  heif_matrix_coefficients_ITU_R_BT_2020_2_constant_luminance = 10,
+  heif_matrix_coefficients_SMPTE_ST_2085 = 11,
+  heif_matrix_coefficients_chromaticity_derived_non_constant_luminance = 12,
+  heif_matrix_coefficients_chromaticity_derived_constant_luminance = 13,
+  heif_matrix_coefficients_ICtCp = 14
 };
 
-struct heif_color_profile_nclx {
+struct heif_color_profile_nclx
+{
   // version 1 fields
 
   uint8_t version;
@@ -685,6 +717,9 @@ struct heif_color_profile_nclx {
 LIBHEIF_API
 struct heif_error heif_image_handle_get_nclx_color_profile(const struct heif_image_handle* handle,
                                                            struct heif_color_profile_nclx** out_data);
+
+LIBHEIF_API
+void heif_nclx_color_profile_free(struct heif_color_profile_nclx* nclx_profile);
 
 
 LIBHEIF_API
@@ -708,11 +743,14 @@ struct heif_error heif_image_get_nclx_color_profile(const struct heif_image* ima
 // An heif_image contains a decoded pixel image in various colorspaces, chroma formats,
 // and bit depths.
 
-// Note: when converting images to colorspace_RGB/chroma_interleaved_24bit, the resulting
-// image contains only a single channel of type channel_interleaved with 3 bytes per pixel,
+// Note: when converting images to an interleaved chroma format, the resulting
+// image contains only a single channel of type channel_interleaved with, e.g., 3 bytes per pixel,
 // containing the interleaved R,G,B values.
 
-enum heif_compression_format {
+// Planar RGB images are specified as heif_colorspace_RGB / heif_chroma_444.
+
+enum heif_compression_format
+{
   heif_compression_undefined = 0,
   heif_compression_HEVC = 1,
   heif_compression_AVC = 2,
@@ -720,18 +758,19 @@ enum heif_compression_format {
   heif_compression_AV1 = 4
 };
 
-enum heif_chroma {
-  heif_chroma_undefined=99,
-  heif_chroma_monochrome=0,
-  heif_chroma_420=1,
-  heif_chroma_422=2,
-  heif_chroma_444=3,
-  heif_chroma_interleaved_RGB =10,
-  heif_chroma_interleaved_RGBA=11,
-  heif_chroma_interleaved_RRGGBB_BE  =12,
-  heif_chroma_interleaved_RRGGBBAA_BE=13,
-  heif_chroma_interleaved_RRGGBB_LE  =14,
-  heif_chroma_interleaved_RRGGBBAA_LE=15
+enum heif_chroma
+{
+  heif_chroma_undefined = 99,
+  heif_chroma_monochrome = 0,
+  heif_chroma_420 = 1,
+  heif_chroma_422 = 2,
+  heif_chroma_444 = 3,
+  heif_chroma_interleaved_RGB = 10,
+  heif_chroma_interleaved_RGBA = 11,
+  heif_chroma_interleaved_RRGGBB_BE = 12,
+  heif_chroma_interleaved_RRGGBBAA_BE = 13,
+  heif_chroma_interleaved_RRGGBB_LE = 14,
+  heif_chroma_interleaved_RRGGBBAA_LE = 15
 };
 
 // DEPRECATED ENUM NAMES
@@ -739,14 +778,16 @@ enum heif_chroma {
 #define heif_chroma_interleaved_32bit  heif_chroma_interleaved_RGBA
 
 
-enum heif_colorspace {
-  heif_colorspace_undefined=99,
-  heif_colorspace_YCbCr=0,
-  heif_colorspace_RGB  =1,
-  heif_colorspace_monochrome=2
+enum heif_colorspace
+{
+  heif_colorspace_undefined = 99,
+  heif_colorspace_YCbCr = 0,
+  heif_colorspace_RGB = 1,
+  heif_colorspace_monochrome = 2
 };
 
-enum heif_channel {
+enum heif_channel
+{
   heif_channel_Y = 0,
   heif_channel_Cb = 1,
   heif_channel_Cr = 2,
@@ -758,7 +799,8 @@ enum heif_channel {
 };
 
 
-enum heif_progress_step {
+enum heif_progress_step
+{
   heif_progress_step_total = 0,
   heif_progress_step_load_tile = 1
 };
@@ -774,9 +816,12 @@ struct heif_decoding_options
   // Default: false (do not ignore).
   uint8_t ignore_transformations;
 
-  void (*start_progress)(enum heif_progress_step step, int max_progress, void* progress_user_data);
-  void (*on_progress)(enum heif_progress_step step, int progress, void* progress_user_data);
-  void (*end_progress)(enum heif_progress_step step, void* progress_user_data);
+  void (* start_progress)(enum heif_progress_step step, int max_progress, void* progress_user_data);
+
+  void (* on_progress)(enum heif_progress_step step, int progress, void* progress_user_data);
+
+  void (* end_progress)(enum heif_progress_step step, void* progress_user_data);
+
   void* progress_user_data;
 
   // version 2 options
@@ -819,12 +864,12 @@ enum heif_chroma heif_image_get_chroma_format(const struct heif_image*);
 // Get width of the given image channel in pixels. Returns -1 if a non-existing
 // channel was given.
 LIBHEIF_API
-int heif_image_get_width(const struct heif_image*,enum heif_channel channel);
+int heif_image_get_width(const struct heif_image*, enum heif_channel channel);
 
 // Get height of the given image channel in pixels. Returns -1 if a non-existing
 // channel was given.
 LIBHEIF_API
-int heif_image_get_height(const struct heif_image*,enum heif_channel channel);
+int heif_image_get_height(const struct heif_image*, enum heif_channel channel);
 
 // Get the number of bits per pixel in the given image channel. Returns -1 if
 // a non-existing channel was given.
@@ -833,7 +878,7 @@ int heif_image_get_height(const struct heif_image*,enum heif_channel channel);
 // Especially for HDR images, this is probably not what you want. Have a look at
 // heif_image_get_bits_per_pixel_range() instead.
 LIBHEIF_API
-int heif_image_get_bits_per_pixel(const struct heif_image*,enum heif_channel channel);
+int heif_image_get_bits_per_pixel(const struct heif_image*, enum heif_channel channel);
 
 
 // Get the number of bits per pixel in the given image channel. This function returns
@@ -843,7 +888,7 @@ int heif_image_get_bits_per_pixel(const struct heif_image*,enum heif_channel cha
 // are reserved for storage. For interleaved RGBA with 12 bit, this function also returns
 // '12', not '48' or '64' (heif_image_get_bits_per_pixel returns 64 in this case).
 LIBHEIF_API
-int heif_image_get_bits_per_pixel_range(const struct heif_image*,enum heif_channel channel);
+int heif_image_get_bits_per_pixel_range(const struct heif_image*, enum heif_channel channel);
 
 LIBHEIF_API
 int heif_image_has_channel(const struct heif_image*, enum heif_channel channel);
@@ -901,15 +946,16 @@ LIBHEIF_API
 struct heif_error heif_context_write_to_file(struct heif_context*,
                                              const char* filename);
 
-struct heif_writer {
+struct heif_writer
+{
   // API version supported by this writer
   int writer_api_version;
 
   // --- version 1 functions ---
-  struct heif_error (*write)(struct heif_context* ctx, // TODO: why do we need this parameter?
-                             const void* data,
-                             size_t size,
-                             void* userdata);
+  struct heif_error (* write)(struct heif_context* ctx, // TODO: why do we need this parameter?
+                              const void* data,
+                              size_t size,
+                              void* userdata);
 };
 
 LIBHEIF_API
@@ -957,14 +1003,13 @@ enum heif_compression_format
 heif_encoder_descriptor_get_compression_format(const struct heif_encoder_descriptor*);
 
 LIBHEIF_API
-int heif_encoder_descriptor_supportes_lossy_compression(const struct heif_encoder_descriptor*);
+int heif_encoder_descriptor_supports_lossy_compression(const struct heif_encoder_descriptor*);
 
 LIBHEIF_API
-int heif_encoder_descriptor_supportes_lossless_compression(const struct heif_encoder_descriptor*);
+int heif_encoder_descriptor_supports_lossless_compression(const struct heif_encoder_descriptor*);
 
 
 // Get an encoder instance that can be used to actually encode images from a descriptor.
-// TODO: why do we need the context here? I think we should remove this. You may pass a NULL context.
 LIBHEIF_API
 struct heif_error heif_context_get_encoder(struct heif_context* context,
                                            const struct heif_encoder_descriptor*,
@@ -984,7 +1029,6 @@ int heif_have_encoder_for_format(enum heif_compression_format format);
 
 // Get an encoder for the given compression format. If there are several encoder plugins
 // for this format, the encoder with the highest plugin priority will be returned.
-// TODO: why do we need the context here? I think we should remove this. You may pass a NULL context.
 LIBHEIF_API
 struct heif_error heif_context_get_encoder_for_format(struct heif_context* context,
                                                       enum heif_compression_format format,
@@ -1025,14 +1069,15 @@ struct heif_error heif_encoder_set_logging_level(struct heif_encoder*, int level
 // Each encoder may define its own, additional set of parameters.
 // You do not have to free the returned list.
 LIBHEIF_API
-const struct heif_encoder_parameter*const* heif_encoder_list_parameters(struct heif_encoder*);
+const struct heif_encoder_parameter* const* heif_encoder_list_parameters(struct heif_encoder*);
 
 // Return the parameter name.
 LIBHEIF_API
 const char* heif_encoder_parameter_get_name(const struct heif_encoder_parameter*);
 
 
-enum heif_encoder_parameter_type {
+enum heif_encoder_parameter_type
+{
   heif_encoder_parameter_type_integer = 1,
   heif_encoder_parameter_type_boolean = 2,
   heif_encoder_parameter_type_string = 3
@@ -1049,7 +1094,7 @@ struct heif_error heif_encoder_parameter_get_valid_integer_range(const struct he
 
 LIBHEIF_API
 struct heif_error heif_encoder_parameter_get_valid_string_values(const struct heif_encoder_parameter*,
-                                                                 const char*const** out_stringarray);
+                                                                 const char* const** out_stringarray);
 
 
 LIBHEIF_API
@@ -1093,7 +1138,7 @@ struct heif_error heif_encoder_get_parameter_string(struct heif_encoder*,
 LIBHEIF_API
 struct heif_error heif_encoder_parameter_string_valid_values(struct heif_encoder*,
                                                              const char* parameter_name,
-                                                             const char*const** out_stringarray);
+                                                             const char* const** out_stringarray);
 
 // Set a parameter of any type to the string value.
 // Integer values are parsed from the string.
@@ -1122,8 +1167,8 @@ int heif_encoder_has_default(struct heif_encoder*,
                              const char* parameter_name);
 
 
-
-struct heif_encoding_options {
+struct heif_encoding_options
+{
   uint8_t version;
 
   // version 1 options
@@ -1236,6 +1281,16 @@ struct heif_error heif_register_decoder_plugin(const struct heif_decoder_plugin*
 
 LIBHEIF_API
 struct heif_error heif_register_encoder_plugin(const struct heif_encoder_plugin*);
+
+
+
+// DEPRECATED, typo in function name
+LIBHEIF_API
+int heif_encoder_descriptor_supportes_lossy_compression(const struct heif_encoder_descriptor*);
+
+// DEPRECATED, typo in function name
+LIBHEIF_API
+int heif_encoder_descriptor_supportes_lossless_compression(const struct heif_encoder_descriptor*);
 
 #ifdef __cplusplus
 }
