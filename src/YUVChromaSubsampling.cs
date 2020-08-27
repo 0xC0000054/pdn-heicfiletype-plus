@@ -16,17 +16,32 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-using System.Runtime.InteropServices;
-
-namespace HeicFileTypePlus.Interop
+namespace HeicFileTypePlus
 {
-    [StructLayout(LayoutKind.Sequential)]
-    internal sealed class EncoderOptions
+    // This must be kept in sync with the YUVChromaSubsampling enumeration in HeicFileTypePlusIO.h.
+    internal enum YUVChromaSubsampling
     {
-        public int quality;
-        public YUVChromaSubsampling yuvFormat;
-        public EncoderPreset preset;
-        public EncoderTuning tuning;
-        public int tuIntraDepth;
+        /// <summary>
+        /// YUV 4:0:0
+        /// </summary>
+        /// <remarks>
+        /// Used internally for gray-scale images, not shown to the user.
+        /// </remarks>
+        Subsampling400,
+
+        /// <summary>
+        /// YUV 4:2:0
+        /// </summary>
+        Subsampling420,
+
+        /// <summary>
+        /// YUV 4:2:2
+        /// </summary>
+        Subsampling422,
+
+        /// <summary>
+        /// YUV 4:4:4
+        /// </summary>
+        Subsampling444
     }
 }

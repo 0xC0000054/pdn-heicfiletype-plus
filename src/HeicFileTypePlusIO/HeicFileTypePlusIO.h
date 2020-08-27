@@ -70,6 +70,7 @@ enum class ColorProfileType
     ICC
 };
 
+// This must be kept in sync with YUVChromaSubsampling.cs.
 enum class YUVChromaSubsampling
 {
     Subsampling400,
@@ -142,6 +143,7 @@ enum class EncoderTuning
 struct EncoderOptions
 {
     int quality;
+    YUVChromaSubsampling yuvFormat;
     EncoderPreset preset;
     EncoderTuning tuning;
     int tuIntraDepth;

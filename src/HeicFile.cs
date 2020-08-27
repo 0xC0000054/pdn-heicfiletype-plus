@@ -79,6 +79,7 @@ namespace HeicFileTypePlus
             Stream output,
             Surface scratchSurface,
             int quality,
+            YUVChromaSubsampling chromaSubsampling,
             EncoderPreset preset,
             EncoderTuning tuning,
             int tuIntraDepth,
@@ -89,9 +90,17 @@ namespace HeicFileTypePlus
                 throw new FormatException($"The image must be at least { MinimumEncodeSize }x{ MinimumEncodeSize } pixels.");
             }
 
+            using (RenderArgs args = new RenderArgs(scratchSurface))
+            {
+                input.Render(args, true);
+            }
+
             EncoderOptions options = new EncoderOptions
             {
                 quality = quality,
+                // YUV 4:0:0 is always used for gray-scale images because it
+                // produces the smallest file size with no quality loss.
+                yuvFormat = IsGrayscaleImage(scratchSurface) ? YUVChromaSubsampling.Subsampling400 : chromaSubsampling,
                 preset = preset,
                 tuning = tuning,
                 tuIntraDepth = tuIntraDepth
@@ -117,11 +126,6 @@ namespace HeicFileTypePlus
                 {
                     colorData = serializedColorData.Value;
                 }
-            }
-
-            using (RenderArgs args = new RenderArgs(scratchSurface))
-            {
-                input.Render(args, true);
             }
 
             using (HeifFileIO fileIO = new HeifFileIO(output, leaveOpen: true))
@@ -294,6 +298,27 @@ namespace HeicFileTypePlus
             }
 
             return items;
+        }
+
+        private static unsafe bool IsGrayscaleImage(Surface surface)
+        {
+            for (int y = 0; y < surface.Height; y++)
+            {
+                ColorBgra* ptr = surface.GetRowAddressUnchecked(y);
+                ColorBgra* ptrEnd = ptr + surface.Width;
+
+                while (ptr < ptrEnd)
+                {
+                    if (!(ptr->R == ptr->G && ptr->G == ptr->B))
+                    {
+                        return false;
+                    }
+
+                    ptr++;
+                }
+            }
+
+            return true;
         }
 
         private static byte[] TryGetMetadata(SafeHeifImageHandle primaryImageHandle, MetadataType metadataType)

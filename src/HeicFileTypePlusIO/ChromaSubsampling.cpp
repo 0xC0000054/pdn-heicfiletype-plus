@@ -308,7 +308,37 @@ namespace
         return Status::Ok;
     }
 
-    Status CreateImagePlanes(heif_image* image, int width, int height, heif_colorspace colorspace, bool hasTransparency)
+    int GetChromaPlaneHeight(int imageHeight, heif_chroma chroma)
+    {
+        switch (chroma)
+        {
+
+        case heif_chroma_420:
+            return imageHeight / 2;
+            break;
+        case heif_chroma_422:
+        case heif_chroma_444:
+        default:
+            return imageHeight;
+        }
+    }
+
+    int GetChromaPlaneWidth(int imageWidth, heif_chroma chroma)
+    {
+        switch (chroma)
+        {
+
+        case heif_chroma_420:
+        case heif_chroma_422:
+            return imageWidth / 2;
+            break;
+        case heif_chroma_444:
+        default:
+            return imageWidth;
+        }
+    }
+
+    Status CreateImagePlanes(heif_image* image, int width, int height, heif_colorspace colorspace, heif_chroma chroma, bool hasTransparency)
     {
         Status status = AddPlane(image, heif_channel_Y, width, height);
 
@@ -316,11 +346,14 @@ namespace
         {
             if (colorspace == heif_colorspace_YCbCr)
             {
-                status = AddPlane(image, heif_channel_Cb, width, height);
+                const int chromaPlaneWidth = GetChromaPlaneWidth(width, chroma);
+                const int chromaPlaneHeight = GetChromaPlaneHeight(height, chroma);
+
+                status = AddPlane(image, heif_channel_Cb, chromaPlaneWidth, chromaPlaneHeight);
 
                 if (status == Status::Ok)
                 {
-                    status = AddPlane(image, heif_channel_Cr, width, height);
+                    status = AddPlane(image, heif_channel_Cr, chromaPlaneWidth, chromaPlaneHeight);
                 }
             }
 
@@ -373,7 +406,7 @@ Status ConvertToHeifImage(
 
     if (status == Status::Ok)
     {
-        status = CreateImagePlanes(heifImage.get(), bgraImage->width, bgraImage->height, colorspace, hasTransparency);
+        status = CreateImagePlanes(heifImage.get(), bgraImage->width, bgraImage->height, colorspace, chroma, hasTransparency);
 
         if (status == Status::Ok)
         {

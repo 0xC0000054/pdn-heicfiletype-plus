@@ -43,26 +43,6 @@ namespace
         return false;
     }
 
-    bool IsGrayscale(const BitmapData* image)
-    {
-        for (int32_t y = 0; y < image->height; y++)
-        {
-            ColorBgra* ptr = reinterpret_cast<ColorBgra*>(image->scan0 + (static_cast<intptr_t>(y) * image->stride));
-
-            for (int32_t x = 0; x < image->width; x++)
-            {
-                if (!(ptr->r == ptr->g && ptr->g == ptr->b))
-                {
-                    return false;
-                }
-
-                ptr++;
-            }
-        }
-
-        return true;
-    }
-
     Status GetEncoder(heif_context* context, ScopedHeifEncoder& scopedEncoder)
     {
         if (!context)
@@ -317,15 +297,13 @@ Status HeicEncoder::Encode(
         }
     }
 
-    const YUVChromaSubsampling yuvFormat = IsGrayscale(input) ? YUVChromaSubsampling::Subsampling400 : YUVChromaSubsampling::Subsampling420;
-
     const bool hasTransparency = HasTransparency(input);
 
     try
     {
         ScopedHeifImage yuvImage;
 
-        Status status = ConvertToHeifImage(input, hasTransparency, colorData, yuvFormat, yuvImage);
+        Status status = ConvertToHeifImage(input, hasTransparency, colorData, options->yuvFormat, yuvImage);
 
         if (status == Status::Ok)
         {

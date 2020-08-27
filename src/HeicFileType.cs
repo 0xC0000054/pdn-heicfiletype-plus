@@ -19,6 +19,7 @@
 using PaintDotNet;
 using PaintDotNet.IndirectUI;
 using PaintDotNet.PropertySystem;
+using System;
 using System.IO;
 
 namespace HeicFileTypePlus
@@ -52,7 +53,8 @@ namespace HeicFileTypePlus
             Quality,
             Preset,
             Tuning,
-            TUIntraDepth
+            TUIntraDepth,
+            YUVChromaSubsampling
         }
 
         /// <summary>
@@ -63,12 +65,30 @@ namespace HeicFileTypePlus
             Property[] props = new Property[]
             {
                 new Int32Property(PropertyNames.Quality, 90, 0, 100, false),
+                CreateChromaSubsampling(),
                 StaticListChoiceProperty.CreateForEnum(PropertyNames.Preset, EncoderPreset.Medium),
                 StaticListChoiceProperty.CreateForEnum(PropertyNames.Tuning, EncoderTuning.SSIM),
                 new Int32Property(PropertyNames.TUIntraDepth, 1, 1, 4, false)
             };
 
             return new PropertyCollection(props);
+
+            StaticListChoiceProperty CreateChromaSubsampling()
+            {
+                // The list is created manually because some of the YUVChromaSubsampling enumeration values
+                // are used for internal signaling.
+
+                object[] valueChoices = new object[]
+                {
+                    YUVChromaSubsampling.Subsampling420,
+                    YUVChromaSubsampling.Subsampling422,
+                    YUVChromaSubsampling.Subsampling444
+                };
+
+                int defaultChoiceIndex = Array.IndexOf(valueChoices, YUVChromaSubsampling.Subsampling422);
+
+                return new StaticListChoiceProperty(PropertyNames.YUVChromaSubsampling, valueChoices, defaultChoiceIndex);
+            }
         }
 
         /// <summary>
@@ -77,6 +97,12 @@ namespace HeicFileTypePlus
         public override ControlInfo OnCreateSaveConfigUI(PropertyCollection props)
         {
             ControlInfo configUI = CreateDefaultSaveConfigUI(props);
+
+            PropertyControlInfo chromaSubsamplingInfo = configUI.FindControlForPropertyName(PropertyNames.YUVChromaSubsampling);
+            chromaSubsamplingInfo.ControlProperties[ControlInfoPropertyNames.DisplayName].Value = "Chroma Subsampling";
+            chromaSubsamplingInfo.SetValueDisplayName(YUVChromaSubsampling.Subsampling420, "4:2:0 (Best Compression)");
+            chromaSubsamplingInfo.SetValueDisplayName(YUVChromaSubsampling.Subsampling422, "4:2:2");
+            chromaSubsamplingInfo.SetValueDisplayName(YUVChromaSubsampling.Subsampling444, "4:4:4 (Best Quality)");
 
             PropertyControlInfo presetInfo = configUI.FindControlForPropertyName(PropertyNames.Preset);
             presetInfo.ControlProperties[ControlInfoPropertyNames.DisplayName].Value = "Encoding Speed / Quality";
@@ -115,7 +141,8 @@ namespace HeicFileTypePlus
         /// </summary>
         protected override bool IsReflexive(PropertyBasedSaveConfigToken token)
         {
-            // libheif only supports HEVC encoding with YCbCr 4:2:0.
+            // Unlike the AVIF format, HEIC does not allow an image to have both an ICC color
+            // profile and use the CICP Identity matrix coefficient for lossless RGB encoding.
             return false;
         }
 
@@ -125,11 +152,12 @@ namespace HeicFileTypePlus
         protected override void OnSaveT(Document input, Stream output, PropertyBasedSaveConfigToken token, Surface scratchSurface, ProgressEventHandler progressCallback)
         {
             int quality = token.GetProperty<Int32Property>(PropertyNames.Quality).Value;
+            YUVChromaSubsampling chromaSubsampling = (YUVChromaSubsampling)token.GetProperty(PropertyNames.YUVChromaSubsampling).Value;
             EncoderPreset preset = (EncoderPreset)token.GetProperty(PropertyNames.Preset).Value;
             EncoderTuning tuning = (EncoderTuning)token.GetProperty(PropertyNames.Tuning).Value;
             int tuIntraDepth = token.GetProperty<Int32Property>(PropertyNames.TUIntraDepth).Value;
 
-            HeicFile.Save(input, output, scratchSurface, quality, preset, tuning, tuIntraDepth, progressCallback);
+            HeicFile.Save(input, output, scratchSurface, quality, chromaSubsampling, preset, tuning, tuIntraDepth, progressCallback);
         }
 
         /// <summary>
