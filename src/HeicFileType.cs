@@ -54,7 +54,9 @@ namespace HeicFileTypePlus
             Preset,
             Tuning,
             TUIntraDepth,
-            YUVChromaSubsampling
+            YUVChromaSubsampling,
+            ForumLink,
+            GitHubLink
         }
 
         /// <summary>
@@ -68,7 +70,9 @@ namespace HeicFileTypePlus
                 CreateChromaSubsampling(),
                 StaticListChoiceProperty.CreateForEnum(PropertyNames.Preset, EncoderPreset.Medium),
                 StaticListChoiceProperty.CreateForEnum(PropertyNames.Tuning, EncoderTuning.SSIM),
-                new Int32Property(PropertyNames.TUIntraDepth, 1, 1, 4, false)
+                new Int32Property(PropertyNames.TUIntraDepth, 1, 1, 4, false),
+                new UriProperty(PropertyNames.ForumLink, new Uri("https://forums.getpaint.net/topic/116873-heic-filetype-plus/")),
+                new UriProperty(PropertyNames.GitHubLink, new Uri("https://github.com/0xC0000054/pdn-heicfiletype-plus"))
             };
 
             return new PropertyCollection(props);
@@ -126,6 +130,14 @@ namespace HeicFileTypePlus
             tuningInfo.SetValueDisplayName(EncoderTuning.FastDecode, "Fast Decode");
 
             configUI.SetPropertyControlValue(PropertyNames.TUIntraDepth, ControlInfoPropertyNames.DisplayName, "TU Intra Depth");
+
+            PropertyControlInfo forumLinkInfo = configUI.FindControlForPropertyName(PropertyNames.ForumLink);
+            forumLinkInfo.ControlProperties[ControlInfoPropertyNames.DisplayName].Value = "More Info";
+            forumLinkInfo.ControlProperties[ControlInfoPropertyNames.Description].Value = "Forum Discussion";
+
+            PropertyControlInfo githubLinkInfo = configUI.FindControlForPropertyName(PropertyNames.GitHubLink);
+            githubLinkInfo.ControlProperties[ControlInfoPropertyNames.DisplayName].Value = string.Empty;
+            githubLinkInfo.ControlProperties[ControlInfoPropertyNames.Description].Value = "GitHub"; // GitHub is a brand name that should not be localized.
 
             return configUI;
         }
