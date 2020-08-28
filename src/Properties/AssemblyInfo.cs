@@ -22,7 +22,7 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("A Paint.NET FileType plugin that supports HEIC image with transparency")]
+[assembly: AssemblyTitle("A Paint.NET FileType plugin that supports HEIC images with transparency")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("null54")]
