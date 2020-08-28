@@ -34,6 +34,6 @@ namespace HeicFileTypePlus
 
         public Version Version => this.assembly.GetName().Version;
 
-        public Uri WebsiteUri => new Uri("https://www.getpaint.net/redirect/plugins.html");
+        public Uri WebsiteUri => new Uri("https://forums.getpaint.net/topic/116873-heic-filetype-plus/");
     }
 }
