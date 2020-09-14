@@ -141,6 +141,7 @@ namespace
             {
             case heif_error_Memory_allocation_error:
                 status = Status::OutOfMemory;
+                break;
             default:
                 status = Status::EncodeFailed;
             }
@@ -195,6 +196,7 @@ namespace
                     {
                     case heif_error_Memory_allocation_error:
                         status = Status::OutOfMemory;
+                        break;
                     default:
                         status = Status::EncodeFailed;
                     }
