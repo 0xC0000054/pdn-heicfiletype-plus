@@ -129,6 +129,29 @@ namespace
         return Status::Ok;
     }
 
+    Status SetChromaSubsampling(heif_encoder* const encoder, YUVChromaSubsampling chroma)
+    {
+        const char* chromaString;
+
+        switch (chroma)
+        {
+        case YUVChromaSubsampling::Subsampling400:
+        case YUVChromaSubsampling::Subsampling420:
+            chromaString = "420";
+            break;
+        case YUVChromaSubsampling::Subsampling422:
+            chromaString = "422";
+            break;
+        case YUVChromaSubsampling::Subsampling444:
+            chromaString = "444";
+            break;
+        default:
+            return Status::UnknownYUVFormat;
+        }
+
+        return SetEncoderParameter(encoder, "chroma", chromaString);
+    }
+
     Status ConfigureEncoderSettings(heif_encoder* const encoder, const EncoderOptions* const options)
     {
         Status status = Status::Ok;
@@ -149,15 +172,20 @@ namespace
 
         if (status == Status::Ok)
         {
-            status = SetEncoderParameter(encoder, "preset", GetPresetString(options->preset));
+            status = SetChromaSubsampling(encoder, options->yuvFormat);
 
             if (status == Status::Ok)
             {
-                status = SetEncoderParameter(encoder, "tune", GetTuningString(options->tuning));
+                status = SetEncoderParameter(encoder, "preset", GetPresetString(options->preset));
 
                 if (status == Status::Ok)
                 {
-                    status = SetEncoderParameter(encoder, "tu-intra-depth", options->tuIntraDepth);
+                    status = SetEncoderParameter(encoder, "tune", GetTuningString(options->tuning));
+
+                    if (status == Status::Ok)
+                    {
+                        status = SetEncoderParameter(encoder, "tu-intra-depth", options->tuIntraDepth);
+                    }
                 }
             }
         }
