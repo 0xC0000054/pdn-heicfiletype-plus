@@ -439,7 +439,7 @@ Status ConvertToHeifImage(
                 MonoToY8(
                     bgraImage,
                     yPlane,
-                    static_cast<size_t>(yPlaneStride));
+                    static_cast<intptr_t>(yPlaneStride));
             }
             else
             {
@@ -455,11 +455,11 @@ Status ConvertToHeifImage(
                     colorInfo,
                     yuvFormat,
                     yPlane,
-                    static_cast<size_t>(yPlaneStride),
+                    static_cast<intptr_t>(yPlaneStride),
                     uPlane,
-                    static_cast<size_t>(uPlaneStride),
+                    static_cast<intptr_t>(uPlaneStride),
                     vPlane,
-                    static_cast<size_t>(vPlaneStride));
+                    static_cast<intptr_t>(vPlaneStride));
             }
 
             if (hasTransparency)
@@ -470,7 +470,7 @@ Status ConvertToHeifImage(
                 AlphaToA8(
                     bgraImage,
                     alphaPlane,
-                    static_cast<size_t>(alphaPlaneStride));
+                    static_cast<intptr_t>(alphaPlaneStride));
             }
 
             convertedImage.swap(heifImage);
