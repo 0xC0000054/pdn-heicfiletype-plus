@@ -39,6 +39,7 @@ extern "C" {
 //  1.1          1             1           N/A           N/A            1           N/A
 //  1.3          1             1            1             1             1           N/A
 //  1.4          1             1            1             1             1            1
+//  1.7          1             2            1             1             1            1
 
 
 #if defined(_MSC_VER) && !defined(LIBHEIF_STATIC_BUILD)
@@ -482,9 +483,11 @@ int heif_image_handle_get_height(const struct heif_image_handle* handle);
 LIBHEIF_API
 int heif_image_handle_has_alpha_channel(const struct heif_image_handle*);
 
+// Returns -1 on error, e.g. if this information is not present in the image.
 LIBHEIF_API
 int heif_image_handle_get_luma_bits_per_pixel(const struct heif_image_handle*);
 
+// Returns -1 on error, e.g. if this information is not present in the image.
 LIBHEIF_API
 int heif_image_handle_get_chroma_bits_per_pixel(const struct heif_image_handle*);
 
@@ -697,7 +700,7 @@ enum heif_matrix_coefficients
 
 struct heif_color_profile_nclx
 {
-  // version 1 fields
+  // === version 1 fields
 
   uint8_t version;
 
@@ -717,6 +720,12 @@ struct heif_color_profile_nclx
 LIBHEIF_API
 struct heif_error heif_image_handle_get_nclx_color_profile(const struct heif_image_handle* handle,
                                                            struct heif_color_profile_nclx** out_data);
+
+// Returned color profile has 'version' field set to the maximum allowed.
+// Do not fill values for higher versions as these might be outside the allocated structure size.
+// May return NULL.
+LIBHEIF_API
+struct heif_color_profile_nclx* heif_nclx_color_profile_alloc();
 
 LIBHEIF_API
 void heif_nclx_color_profile_free(struct heif_color_profile_nclx* nclx_profile);
@@ -870,6 +879,17 @@ int heif_image_get_width(const struct heif_image*, enum heif_channel channel);
 // channel was given.
 LIBHEIF_API
 int heif_image_get_height(const struct heif_image*, enum heif_channel channel);
+
+// Get the width of the main channel (Y in YCbCr, or any in RGB).
+LIBHEIF_API
+int heif_image_get_primary_width(const struct heif_image*);
+
+LIBHEIF_API
+int heif_image_get_primary_height(const struct heif_image*);
+
+LIBHEIF_API
+struct heif_error heif_image_crop(struct heif_image* img,
+                                  int left, int right, int top, int bottom);
 
 // Get the number of bits per pixel in the given image channel. Returns -1 if
 // a non-existing channel was given.
