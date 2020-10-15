@@ -91,6 +91,31 @@ namespace HeicFileTypePlus.Interop
         /// <summary>
         /// sRGB or sYCC
         /// </summary>
-        Srgb = 13
+        Srgb = 13,
+
+        /// <summary>
+        /// BT.2020-2 10-bit systems
+        /// </summary>
+        BT2020TenBit = 14,
+
+        /// <summary>
+        /// BT.2020-2 12-bit systems
+        /// </summary>
+        BT2020TwelveBit = 15,
+
+        /// <summary>
+        /// SMPTE ST 2084, ITU BT.2100-0 PQ
+        /// </summary>
+        Smpte2084 = 16,
+
+        /// <summary>
+        /// SMPTE ST 428-1
+        /// </summary>
+        Smpte428 = 17,
+
+        /// <summary>
+        /// BT.2100-0 HLG, ARIB STD-B67
+        /// </summary>
+        HLG = 18
     }
 }

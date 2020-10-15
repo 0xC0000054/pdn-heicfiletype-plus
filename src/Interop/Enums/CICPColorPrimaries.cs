@@ -51,6 +51,36 @@ namespace HeicFileTypePlus.Interop
         /// <summary>
         /// SMPTE 240
         /// </summary>
-        Smpte240 = 7
+        Smpte240 = 7,
+
+        /// <summary>
+        /// Generic film (color filters using illuminant C)
+        /// </summary>
+        GenericFilm = 8,
+
+        /// <summary>
+        /// BT.2020-2, BT.2100-0
+        /// </summary>
+        BT2020 = 9,
+
+        /// <summary>
+        /// SMPTE 428 (CIE 1921 XYZ)
+        /// </summary>
+        Smpte428 = 10,
+
+        /// <summary>
+        /// SMPTE RP 431-2
+        /// </summary>
+        Smpte431 = 11,
+
+        /// <summary>
+        /// SMPTE EG 432-1
+        /// </summary>
+        Smpte432 = 12,
+
+        /// <summary>
+        /// EBU Tech. 3213-E
+        /// </summary>
+        Ebu3213 = 22
     }
 }

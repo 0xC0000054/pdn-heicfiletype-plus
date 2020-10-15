@@ -66,6 +66,36 @@ namespace HeicFileTypePlus.Interop
         /// <summary>
         /// YCgCo
         /// </summary>
-        YCgCo = 8
+        YCgCo = 8,
+
+        /// <summary>
+        /// BT.2020-2 non-constant luminance, BT.2100-0 YCbCr
+        /// </summary>
+        BT2020NCL = 9,
+
+        /// <summary>
+        /// BT.2020-2 constant luminance
+        /// </summary>
+        BT2020CL = 10,
+
+        /// <summary>
+        /// SMPTE ST 2085
+        /// </summary>
+        Smpte2085 = 11,
+
+        /// <summary>
+        /// Chromaticity-derived non-constant luminance
+        /// </summary>
+        CromatNCL = 12,
+
+        /// <summary>
+        /// Chromaticity-derived constant luminance
+        /// </summary>
+        CromatCL = 13,
+
+        /// <summary>
+        /// BT.2100-0 ICtCp
+        /// </summary>
+        ICtCp = 14
     }
 }
