@@ -76,7 +76,8 @@ enum class YUVChromaSubsampling
     Subsampling400,
     Subsampling420,
     Subsampling422,
-    Subsampling444
+    Subsampling444,
+    IdentityMatrix
 };
 
 struct CICPColorData

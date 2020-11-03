@@ -42,6 +42,14 @@ namespace HeicFileTypePlus
         /// <summary>
         /// YUV 4:4:4
         /// </summary>
-        Subsampling444
+        Subsampling444,
+
+        /// <summary>
+        /// The RGB color values are used directly, without YUV conversion.
+        /// </summary>
+        /// <remarks>
+        /// Used internally for lossless RGB encoding, not shown to the user.
+        /// </remarks>
+        IdentityMatrix
     }
 }

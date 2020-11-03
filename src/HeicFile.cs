@@ -95,12 +95,14 @@ namespace HeicFileTypePlus
                 input.Render(args, true);
             }
 
+            bool grayscale = IsGrayscaleImage(scratchSurface);
+
             EncoderOptions options = new EncoderOptions
             {
                 quality = quality,
                 // YUV 4:0:0 is always used for gray-scale images because it
                 // produces the smallest file size with no quality loss.
-                yuvFormat = IsGrayscaleImage(scratchSurface) ? YUVChromaSubsampling.Subsampling400 : chromaSubsampling,
+                yuvFormat = grayscale ? YUVChromaSubsampling.Subsampling400 : chromaSubsampling,
                 preset = preset,
                 tuning = tuning,
                 tuIntraDepth = tuIntraDepth
@@ -117,14 +119,31 @@ namespace HeicFileTypePlus
                 fullRange = true
             };
 
-            string serializedCICPData = input.Metadata.GetUserValue(CICPMetadataName);
-            if (serializedCICPData != null)
+            if (quality == 100 && !grayscale)
             {
-                CICPColorData? serializedColorData = CICPSerializer.TryDeserialize(serializedCICPData);
+                // The Identity matrix coefficient places the RGB values into the YUV planes without any conversion.
+                // This reduces the compression efficiency, but allows for fully lossless encoding.
 
-                if (serializedColorData.HasValue)
+                options.yuvFormat = YUVChromaSubsampling.IdentityMatrix;
+                colorData = new CICPColorData
                 {
-                    colorData = serializedColorData.Value;
+                    colorPrimaries = CICPColorPrimaries.BT709,
+                    transferCharacteristics = CICPTransferCharacteristics.Srgb,
+                    matrixCoefficients = CICPMatrixCoefficients.Identity,
+                    fullRange = true
+                };
+            }
+            else
+            {
+                string serializedCICPData = input.Metadata.GetUserValue(CICPMetadataName);
+                if (serializedCICPData != null)
+                {
+                    CICPColorData? serializedColorData = CICPSerializer.TryDeserialize(serializedCICPData);
+
+                    if (serializedColorData.HasValue)
+                    {
+                        colorData = serializedColorData.Value;
+                    }
                 }
             }
 

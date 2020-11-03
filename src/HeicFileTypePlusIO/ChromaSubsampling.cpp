@@ -107,6 +107,39 @@ namespace
         return table;
     }
 
+    void ColorToIdentity8(
+        const BitmapData* bgraImage,
+        uint8_t* yPlane,
+        size_t yPlaneStride,
+        uint8_t* uPlane,
+        size_t uPlaneStride,
+        uint8_t* vPlane,
+        size_t vPlaneStride)
+    {
+        for (int32_t y = 0; y < bgraImage->height; ++y)
+        {
+            const ColorBgra* src = reinterpret_cast<const ColorBgra*>(bgraImage->scan0 + (static_cast<int64_t>(y) * bgraImage->stride));
+            uint8_t* dstY = &yPlane[y * yPlaneStride];
+            uint8_t* dstU = &uPlane[y * uPlaneStride];
+            uint8_t* dstV = &vPlane[y * vPlaneStride];
+
+            for (int32_t x = 0; x < bgraImage->width; ++x)
+            {
+                // RGB -> Identity GBR conversion
+                // Formulas 41-43 from https://www.itu.int/rec/T-REC-H.273-201612-I/en
+
+                *dstY = src->g;
+                *dstU = src->b;
+                *dstV = src->r;
+
+                ++src;
+                ++dstY;
+                ++dstU;
+                ++dstV;
+            }
+        }
+    }
+
     void ColorToYUV8(
         const BitmapData* bgraImage,
         const CICPColorData& colorInfo,
@@ -412,6 +445,7 @@ Status ConvertToHeifImage(
         colorspace = heif_colorspace_YCbCr;
         break;
     case YUVChromaSubsampling::Subsampling444:
+    case YUVChromaSubsampling::IdentityMatrix:
         chroma = heif_chroma_444;
         colorspace = heif_colorspace_YCbCr;
         break;
@@ -450,16 +484,33 @@ Status ConvertToHeifImage(
                 int vPlaneStride;
                 uint8_t* vPlane = heif_image_get_plane(heifImage.get(), heif_channel_Cr, &vPlaneStride);
 
-                ColorToYUV8(
-                    bgraImage,
-                    colorInfo,
-                    yuvFormat,
-                    yPlane,
-                    static_cast<intptr_t>(yPlaneStride),
-                    uPlane,
-                    static_cast<intptr_t>(uPlaneStride),
-                    vPlane,
-                    static_cast<intptr_t>(vPlaneStride));
+                if (yuvFormat == YUVChromaSubsampling::IdentityMatrix)
+                {
+                    // The IdentityMatrix format places the RGB values into the YUV planes
+                    // without any conversion.
+                    // This reduces the compression efficiency, but allows for fully lossless encoding.
+                    ColorToIdentity8(
+                        bgraImage,
+                        yPlane,
+                        static_cast<intptr_t>(yPlaneStride),
+                        uPlane,
+                        static_cast<intptr_t>(uPlaneStride),
+                        vPlane,
+                        static_cast<intptr_t>(vPlaneStride));
+                }
+                else
+                {
+                    ColorToYUV8(
+                        bgraImage,
+                        colorInfo,
+                        yuvFormat,
+                        yPlane,
+                        static_cast<intptr_t>(yPlaneStride),
+                        uPlane,
+                        static_cast<intptr_t>(uPlaneStride),
+                        vPlane,
+                        static_cast<intptr_t>(vPlaneStride));
+                }
             }
 
             if (hasTransparency)

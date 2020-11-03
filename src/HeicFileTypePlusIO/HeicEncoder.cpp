@@ -143,6 +143,7 @@ namespace
             chromaString = "422";
             break;
         case YUVChromaSubsampling::Subsampling444:
+        case YUVChromaSubsampling::IdentityMatrix:
             chromaString = "444";
             break;
         default:
@@ -156,7 +157,16 @@ namespace
     {
         Status status = Status::Ok;
 
-        heif_error error = heif_encoder_set_lossy_quality(encoder, options->quality);
+        heif_error error;
+
+        if (options->quality == 100)
+        {
+            error = heif_encoder_set_lossless(encoder, true);
+        }
+        else
+        {
+            error = heif_encoder_set_lossy_quality(encoder, options->quality);
+        }
 
         if (error.code != heif_error_Ok)
         {
@@ -251,14 +261,17 @@ namespace
             return Status::NullParameter;
         }
 
-        Status status;
+        Status status = Status::Ok;
 
         if (iccProfile && iccProfileSize)
         {
             status = AddICCProfileToImage(image, iccProfile, iccProfileSize);
         }
-        else
+
+        if (status == Status::Ok)
         {
+            // The CICP color data is always added to the image, it will be
+            // stored in the HEVC VUI data if the image has an ICC color profile.
             status = AddNclxProfileToImage(image, cicp);
         }
 
