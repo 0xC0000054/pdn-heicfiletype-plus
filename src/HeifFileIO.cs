@@ -18,7 +18,6 @@
 
 using HeicFileTypePlus.Interop;
 using PaintDotNet;
-using PaintDotNet.MemoryManagement;
 using System;
 using System.IO;
 using System.Runtime.ExceptionServices;
@@ -33,7 +32,7 @@ namespace HeicFileTypePlus
         private const int Success = 0;
         private const int Failure = 1;
 
-        private SafeCoTaskMemAllocHandle ioCallbacksHandle;
+        private SafeCoTaskMemHandle ioCallbacksHandle;
         private Stream stream;
         private readonly bool leaveOpen;
         private readonly HeicIOCallbackRead read;
@@ -62,11 +61,11 @@ namespace HeicFileTypePlus
             // of the native code will keep a copy for use across calls.
             // This mainly affects file loading, where the callbacks must remain valid
             // for the lifetime of the SafeHeifContext handle.
-            this.ioCallbacksHandle = SafeCoTaskMemAllocHandle.Alloc(IOCallbacks.SizeOf);
+            this.ioCallbacksHandle = SafeCoTaskMemHandle.Allocate(IOCallbacks.SizeOf);
 
             unsafe
             {
-                IOCallbacks* callbacks = (IOCallbacks*)this.ioCallbacksHandle.Address;
+                IOCallbacks* callbacks = (IOCallbacks*)this.ioCallbacksHandle.DangerousGetHandle();
                 callbacks->Read = Marshal.GetFunctionPointerForDelegate(this.read);
                 callbacks->Write = Marshal.GetFunctionPointerForDelegate(this.write);
                 callbacks->Seek = Marshal.GetFunctionPointerForDelegate(this.seek);
