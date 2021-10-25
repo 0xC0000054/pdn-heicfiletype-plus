@@ -71,7 +71,7 @@ BEGIN
             VALUE "FileDescription", "IO library for HeicFileTypePlus"
             VALUE "FileVersion", "1.0.4.0"
             VALUE "InternalName", "HeicFile.dll"
-            VALUE "LegalCopyright", "Copyright (C) 2020 Nicholas Hayes"
+            VALUE "LegalCopyright", "Copyright (C) 2021 Nicholas Hayes"
             VALUE "OriginalFilename", "HeicFile.dll"
             VALUE "ProductName", "HeicFileTypePlus"
             VALUE "ProductVersion", "1.0.4.0"
