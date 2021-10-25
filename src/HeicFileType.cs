@@ -143,22 +143,6 @@ namespace HeicFileTypePlus
         }
 
         /// <summary>
-        /// Determines if the document was saved without altering the pixel values.
-        ///
-        /// Any settings that change the pixel values should return 'false'.
-        ///
-        /// Because Paint.NET prompts the user to flatten the image, flattening should not be
-        /// considered.
-        /// For example, a 32-bit PNG will return 'true' even if the document has multiple layers.
-        /// </summary>
-        protected override bool IsReflexive(PropertyBasedSaveConfigToken token)
-        {
-            // Unlike the AVIF format, HEIC does not allow an image to have both an ICC color
-            // profile and use the CICP Identity matrix coefficient for lossless RGB encoding.
-            return false;
-        }
-
-        /// <summary>
         /// Saves a document to a stream respecting the properties
         /// </summary>
         protected override void OnSaveT(Document input, Stream output, PropertyBasedSaveConfigToken token, Surface scratchSurface, ProgressEventHandler progressCallback)

@@ -20,6 +20,7 @@ using HeicFileTypePlus.Exif;
 using HeicFileTypePlus.Interop;
 using PaintDotNet;
 using PaintDotNet.Imaging;
+using PaintDotNet.Rendering;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -90,10 +91,8 @@ namespace HeicFileTypePlus
                 throw new FormatException($"The image must be at least { MinimumEncodeSize }x{ MinimumEncodeSize } pixels.");
             }
 
-            using (RenderArgs args = new RenderArgs(scratchSurface))
-            {
-                input.Render(args, true);
-            }
+            scratchSurface.Clear();
+            input.CreateRenderer().Render(scratchSurface);
 
             bool grayscale = IsGrayscaleImage(scratchSurface);
 
@@ -323,7 +322,7 @@ namespace HeicFileTypePlus
         {
             for (int y = 0; y < surface.Height; y++)
             {
-                ColorBgra* ptr = surface.GetRowAddressUnchecked(y);
+                ColorBgra* ptr = surface.GetRowPointerUnchecked(y);
                 ColorBgra* ptrEnd = ptr + surface.Width;
 
                 while (ptr < ptrEnd)
