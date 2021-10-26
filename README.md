@@ -26,7 +26,7 @@ See [License.md](License.md) for more information.
 ## Prerequisites
 
 * Visual Studio 2019
-* Paint.NET 4.2.13 or later
+* Paint.NET 4.3.2 or later
 
 ## Building the plugin
 
