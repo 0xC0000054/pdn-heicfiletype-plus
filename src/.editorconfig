@@ -32,6 +32,9 @@ csharp_style_expression_bodied_accessors              = true : none
 # Code block settings
 csharp_prefer_braces                                  = true : warning
 
+# Code style settings
+csharp_style_prefer_range_operator                    = false : silent
+
 # "This." qualifier settings
 dotnet_style_qualification_for_field                  = true : suggestion
 dotnet_style_qualification_for_property               = true : suggestion
