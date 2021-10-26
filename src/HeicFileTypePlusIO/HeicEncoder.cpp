@@ -159,13 +159,13 @@ namespace
 
         heif_error error;
 
-        if (options->quality == 100)
+        // LibHeif requires the lossy quality to be always be set, if it has
+        // not been set the encoder will produce a corrupted image.
+        error = heif_encoder_set_lossy_quality(encoder, options->quality);
+
+        if (options->quality == 100 && error.code == heif_error_Ok)
         {
             error = heif_encoder_set_lossless(encoder, true);
-        }
-        else
-        {
-            error = heif_encoder_set_lossy_quality(encoder, options->quality);
         }
 
         if (error.code != heif_error_Ok)
