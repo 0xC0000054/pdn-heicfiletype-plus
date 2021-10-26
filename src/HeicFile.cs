@@ -383,7 +383,7 @@ namespace HeicFileTypePlus
 
             return metadataEntries;
 
-            bool TryReadInt32BigEndian(byte[] bytes, int startOffset, out int value)
+            static bool TryReadInt32BigEndian(byte[] bytes, int startOffset, out int value)
             {
                 value = 0;
 

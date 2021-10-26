@@ -77,7 +77,7 @@ namespace HeicFileTypePlus
 
             return new PropertyCollection(props);
 
-            StaticListChoiceProperty CreateChromaSubsampling()
+            static StaticListChoiceProperty CreateChromaSubsampling()
             {
                 // The list is created manually because some of the YUVChromaSubsampling enumeration values
                 // are used for internal signaling.
