@@ -40,6 +40,9 @@ extern "C" {
 //  1.3          1             1            1             1             1           N/A
 //  1.4          1             1            1             1             1            1
 //  1.7          1             2            1             1             1            1
+//  1.9.2        1             2            2             1             1            1
+//  1.10         1             2            3             1             1            1
+//  1.11         1             2            4             1             1            1
 
 
 #if defined(_MSC_VER) && !defined(LIBHEIF_STATIC_BUILD)
@@ -114,7 +117,10 @@ enum heif_error_code
   heif_error_Encoder_plugin_error = 8,
 
   // Error during encoding or when writing to the output
-  heif_error_Encoding_error = 9
+  heif_error_Encoding_error = 9,
+
+  // Application has asked for a color profile type that does not exist
+  heif_error_Color_profile_does_not_exist = 10
 };
 
 
@@ -199,6 +205,7 @@ enum heif_suberror_code
 
   heif_suberror_No_av1C_box = 131,
 
+  heif_suberror_Wrong_tile_image_pixel_depth = 132,
 
 
   // --- Memory_allocation_error ---
@@ -292,6 +299,7 @@ LIBHEIF_API
 enum heif_filetype_result heif_check_filetype(const uint8_t* data, int len);
 
 
+// DEPRECATED, use heif_brand2 instead
 enum heif_brand
 {
   heif_unknown_brand,
@@ -309,8 +317,40 @@ enum heif_brand
 };
 
 // input data should be at least 12 bytes
+// DEPRECATED, use heif_read_main_brand() instead
 LIBHEIF_API
 enum heif_brand heif_main_brand(const uint8_t* data, int len);
+
+
+typedef uint32_t heif_brand2;
+
+// input data should be at least 12 bytes
+LIBHEIF_API
+heif_brand2 heif_read_main_brand(const uint8_t* data, int len);
+
+// 'brand_fourcc' must be 4 character long, but need not be 0-terminated
+LIBHEIF_API
+heif_brand2 heif_fourcc_to_brand(const char* brand_fourcc);
+
+// the output buffer must be at least 4 bytes long
+LIBHEIF_API
+void heif_brand_to_fourcc(heif_brand2 brand, char* out_fourcc);
+
+// 'brand_fourcc' must be 4 character long, but need not be 0-terminated
+// returns 1 if file includes the brand, and 0 if it does not
+// returns -1 if the provided data is not sufficient
+//            (you should input at least as many bytes as indicated in the first 4 bytes of the file, usually ~50 bytes will do)
+// returns -2 on other errors
+LIBHEIF_API
+int heif_has_compatible_brand(const uint8_t* data, int len, const char* brand_fourcc);
+
+// Returns an array of compatible brands. The array is allocated by this function and has to be freed with 'heif_free_list_of_compatible_brands()'.
+// The number of entries is returned in out_size.
+LIBHEIF_API
+struct heif_error heif_list_compatible_brands(const uint8_t* data, int len, heif_brand2** out_brands, int* out_size);
+
+LIBHEIF_API
+void heif_free_list_of_compatible_brands(heif_brand2* brands_list);
 
 
 // Returns one of these MIME types:
@@ -483,6 +523,9 @@ int heif_image_handle_get_height(const struct heif_image_handle* handle);
 LIBHEIF_API
 int heif_image_handle_has_alpha_channel(const struct heif_image_handle*);
 
+LIBHEIF_API
+int heif_image_handle_is_premultiplied_alpha(const struct heif_image_handle*);
+
 // Returns -1 on error, e.g. if this information is not present in the image.
 LIBHEIF_API
 int heif_image_handle_get_luma_bits_per_pixel(const struct heif_image_handle*);
@@ -557,6 +600,10 @@ LIBHEIF_API
 void heif_depth_representation_info_free(const struct heif_depth_representation_info* info);
 
 // Returns true when there is depth_representation_info available
+// Note 1: depth_image_id is currently unused because we support only one depth channel per image, but
+// you should still provide the correct ID for future compatibility.
+// Note 2: Because of an API bug before v1.11.0, the function also works when 'handle' is the handle of the depth image.
+// However, you should pass the handle of the main image. Please adapt your code if needed.
 LIBHEIF_API
 int heif_image_handle_get_depth_image_representation_info(const struct heif_image_handle* handle,
                                                           heif_item_id depth_image_id,
@@ -579,6 +626,37 @@ LIBHEIF_API
 struct heif_error heif_image_handle_get_thumbnail(const struct heif_image_handle* main_image_handle,
                                                   heif_item_id thumbnail_id,
                                                   struct heif_image_handle** out_thumbnail_handle);
+
+
+// ------------------------- auxiliary images -------------------------
+
+#define LIBHEIF_AUX_IMAGE_FILTER_OMIT_ALPHA (1UL<<1)
+#define LIBHEIF_AUX_IMAGE_FILTER_OMIT_DEPTH (2UL<<1)
+
+// List the number of auxiliary images assigned to this image handle.
+LIBHEIF_API
+int heif_image_handle_get_number_of_auxiliary_images(const struct heif_image_handle* handle,
+                                                     int aux_filter);
+
+LIBHEIF_API
+int heif_image_handle_get_list_of_auxiliary_image_IDs(const struct heif_image_handle* handle,
+                                                      int aux_filter,
+                                                      heif_item_id* ids, int count);
+
+// You are responsible to deallocate the returned buffer with heif_image_handle_free_auxiliary_types().
+LIBHEIF_API
+struct heif_error heif_image_handle_get_auxiliary_type(const struct heif_image_handle* handle,
+                                                       const char** out_type);
+
+LIBHEIF_API
+void heif_image_handle_free_auxiliary_types(const struct heif_image_handle* handle,
+                                            const char** out_type);
+
+// Get the image handle of an auxiliary image.
+LIBHEIF_API
+struct heif_error heif_image_handle_get_auxiliary_image_handle(const struct heif_image_handle* main_image_handle,
+                                                               heif_item_id auxiliary_id,
+                                                               struct heif_image_handle** out_auxiliary_handle);
 
 
 // ------------------------- metadata (Exif / XMP) -------------------------
@@ -632,12 +710,17 @@ enum heif_color_profile_type
 
 
 // Returns 'heif_color_profile_type_not_present' if there is no color profile.
+// If there is an ICC profile and an NCLX profile, the ICC profile is returned.
+// TODO: we need a new API for this function as images can contain both NCLX and ICC at the same time.
+//       However, you can still use heif_image_handle_get_raw_color_profile() and
+//       heif_image_handle_get_nclx_color_profile() to access both profiles.
 LIBHEIF_API
 enum heif_color_profile_type heif_image_handle_get_color_profile_type(const struct heif_image_handle* handle);
 
 LIBHEIF_API
 size_t heif_image_handle_get_raw_color_profile_size(const struct heif_image_handle* handle);
 
+// Returns 'heif_error_Color_profile_does_not_exist' when there is no ICC profile.
 LIBHEIF_API
 struct heif_error heif_image_handle_get_raw_color_profile(const struct heif_image_handle* handle,
                                                           void* out_data);
@@ -717,6 +800,9 @@ struct heif_color_profile_nclx
   float color_primary_white_x, color_primary_white_y;
 };
 
+// Returns 'heif_error_Color_profile_does_not_exist' when there is no NCLX profile.
+// TODO: This function does currently not return an NCLX profile if it is stored in the image bitstream.
+//       Only NCLX profiles stored as colr boxes are returned. This may change in the future.
 LIBHEIF_API
 struct heif_error heif_image_handle_get_nclx_color_profile(const struct heif_image_handle* handle,
                                                            struct heif_color_profile_nclx** out_data);
@@ -1107,10 +1193,20 @@ enum heif_encoder_parameter_type
 LIBHEIF_API
 enum heif_encoder_parameter_type heif_encoder_parameter_get_type(const struct heif_encoder_parameter*);
 
+// DEPRECATED. Use heif_encoder_parameter_get_valid_integer_values() instead.
 LIBHEIF_API
 struct heif_error heif_encoder_parameter_get_valid_integer_range(const struct heif_encoder_parameter*,
                                                                  int* have_minimum_maximum,
                                                                  int* minimum, int* maximum);
+
+// If integer is limited by a range, have_minimum and/or have_maximum will be != 0 and *minimum, *maximum is set.
+// If integer is limited by a fixed set of values, *num_valid_values will be >0 and *out_integer_array is set.
+LIBHEIF_API
+struct heif_error heif_encoder_parameter_get_valid_integer_values(const struct heif_encoder_parameter*,
+                                                                  int* have_minimum, int* have_maximum,
+                                                                  int* minimum, int* maximum,
+                                                                  int* num_valid_values,
+                                                                  const int** out_integer_array);
 
 LIBHEIF_API
 struct heif_error heif_encoder_parameter_get_valid_string_values(const struct heif_encoder_parameter*,
@@ -1160,6 +1256,14 @@ struct heif_error heif_encoder_parameter_string_valid_values(struct heif_encoder
                                                              const char* parameter_name,
                                                              const char* const** out_stringarray);
 
+LIBHEIF_API
+struct heif_error heif_encoder_parameter_integer_valid_values(struct heif_encoder*,
+                                                              const char* parameter_name,
+                                                              int* have_minimum, int* have_maximum,
+                                                              int* minimum, int* maximum,
+                                                              int* num_valid_values,
+                                                              const int** out_integer_array);
+
 // Set a parameter of any type to the string value.
 // Integer values are parsed from the string.
 // Boolean values can be "true"/"false"/"1"/"0"
@@ -1194,6 +1298,25 @@ struct heif_encoding_options
   // version 1 options
 
   uint8_t save_alpha_channel; // default: true
+
+  // version 2 options
+
+  // Crops heif images with a grid wrapper instead of a 'clap' transform.
+  // Results in slightly larger file size.
+  // Default: on.
+  uint8_t macOS_compatibility_workaround;
+
+  // version 3 options
+
+  uint8_t save_two_colr_boxes_when_ICC_and_nclx_available; // default: false
+
+  // version 4 options
+
+  // Set this to the NCLX parameters to be used in the output image or set to NULL
+  // when the same parameters as in the input image should be used.
+  struct heif_color_profile_nclx* output_nclx_profile;
+
+  uint8_t macOS_compatibility_workaround_no_nclx_profile;
 };
 
 LIBHEIF_API
@@ -1284,6 +1407,13 @@ struct heif_error heif_image_add_plane(struct heif_image* image,
                                        enum heif_channel channel,
                                        int width, int height, int bit_depth);
 
+// Signal that the image is premultiplied by the alpha pixel values.
+LIBHEIF_API
+void heif_image_set_premultiplied_alpha(struct heif_image* image,
+                                        int is_premultiplied_alpha);
+
+LIBHEIF_API
+int heif_image_is_premultiplied_alpha(struct heif_image* image);
 
 
 
