@@ -191,31 +191,25 @@ namespace HeicFileTypePlus
                 }
             }
 
-            if (primaryImageInfo.colorProfileType == ColorProfileType.ICC)
+            ulong iccProfileSize = HeicNative.GetICCProfileSize(primaryImageHandle);
+
+            if (iccProfileSize > 0 && iccProfileSize <= int.MaxValue)
             {
-                ulong size = HeicNative.GetICCProfileSize(primaryImageHandle);
+                byte[] iccProfile = new byte[iccProfileSize];
+                HeicNative.GetICCProfile(primaryImageHandle, iccProfile);
 
-                if (size > 0 && size <= int.MaxValue)
-                {
-                    byte[] iccProfile = new byte[size];
-                    HeicNative.GetICCProfile(primaryImageHandle, iccProfile);
-
-                    document.Metadata.AddExifPropertyItem(ExifSection.Image,
-                                                          unchecked((ushort)ExifTagID.IccProfileData),
-                                                          new ExifValue(ExifValueType.Undefined, iccProfile));
-                }
+                document.Metadata.AddExifPropertyItem(ExifSection.Image,
+                                                      unchecked((ushort)ExifTagID.IccProfileData),
+                                                      new ExifValue(ExifValueType.Undefined, iccProfile));
             }
-            else if (primaryImageInfo.colorProfileType == ColorProfileType.CICP)
+
+            HeicNative.GetCICPColorData(primaryImageHandle, out CICPColorData colorData);
+
+            string serializedCICPData = CICPSerializer.TrySerialize(colorData);
+
+            if (serializedCICPData != null)
             {
-                CICPColorData colorData;
-                HeicNative.GetCICPColorData(primaryImageHandle, out colorData);
-
-                string serializedValue = CICPSerializer.TrySerialize(colorData);
-
-                if (serializedValue != null)
-                {
-                    document.Metadata.SetUserValue(CICPMetadataName, serializedValue);
-                }
+                document.Metadata.SetUserValue(CICPMetadataName, serializedCICPData);
             }
 
             if (primaryImageInfo.hasXmp)

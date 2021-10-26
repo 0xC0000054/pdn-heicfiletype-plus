@@ -63,13 +63,6 @@ struct IOCallbacks
     int64_t(__stdcall* GetSize)();
 };
 
-enum class ColorProfileType
-{
-    None,
-    CICP,
-    ICC
-};
-
 // This must be kept in sync with YUVChromaSubsampling.cs.
 enum class YUVChromaSubsampling
 {
@@ -92,7 +85,6 @@ struct PrimaryImageInfo
 {
     int width;
     int height;
-    ColorProfileType colorProfileType;
     bool hasExif;
     bool hasXmp;
 };

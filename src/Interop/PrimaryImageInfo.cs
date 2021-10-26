@@ -25,7 +25,6 @@ namespace HeicFileTypePlus.Interop
     {
         public int width;
         public int height;
-        public ColorProfileType colorProfileType;
         [MarshalAs(UnmanagedType.U1)]
         public bool hasExif;
         [MarshalAs(UnmanagedType.U1)]

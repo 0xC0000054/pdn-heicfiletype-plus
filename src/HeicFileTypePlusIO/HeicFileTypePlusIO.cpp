@@ -85,22 +85,6 @@ Status __stdcall GetPrimaryImage(heif_context* context, heif_image_handle** prim
 
     info->width = heif_image_handle_get_width(*primaryImageHandle);
     info->height = heif_image_handle_get_height(*primaryImageHandle);
-
-    switch (heif_image_handle_get_color_profile_type(*primaryImageHandle))
-    {
-    case heif_color_profile_type_nclx:
-        info->colorProfileType = ColorProfileType::CICP;
-        break;
-    case heif_color_profile_type_prof:
-    case heif_color_profile_type_rICC:
-        info->colorProfileType = ColorProfileType::ICC;
-        break;
-    case heif_color_profile_type_not_present:
-    default:
-        info->colorProfileType = ColorProfileType::None;
-        break;
-    }
-
     info->hasExif = HasExifMetadata(*primaryImageHandle);
     info->hasXmp = HasXmpMetadata(*primaryImageHandle);
 
@@ -163,7 +147,23 @@ Status __stdcall GetCICPColorData(heif_image_handle* imageHandle, CICPColorData*
 
     heif_error error = heif_image_handle_get_nclx_color_profile(imageHandle, &nclxProfile);
 
-    if (error.code != heif_error_Ok)
+    if (error.code == heif_error_Ok)
+    {
+        data->colorPrimaries = nclxProfile->color_primaries;
+        data->transferCharacteristics = nclxProfile->transfer_characteristics;
+        data->matrixCoefficients = nclxProfile->matrix_coefficients;
+        data->fullRange = nclxProfile->full_range_flag;
+
+        heif_nclx_color_profile_free(nclxProfile);
+    }
+    else if (error.code == heif_error_Color_profile_does_not_exist)
+    {
+        data->colorPrimaries = heif_color_primaries_unspecified;
+        data->transferCharacteristics = heif_transfer_characteristic_unspecified;
+        data->matrixCoefficients = heif_matrix_coefficients_unspecified;
+        data->fullRange = false;
+    }
+    else
     {
         switch (error.code)
         {
@@ -173,13 +173,6 @@ Status __stdcall GetCICPColorData(heif_image_handle* imageHandle, CICPColorData*
             return Status::ColorInformationError;
         }
     }
-
-    data->colorPrimaries = nclxProfile->color_primaries;
-    data->transferCharacteristics = nclxProfile->transfer_characteristics;
-    data->matrixCoefficients = nclxProfile->matrix_coefficients;
-    data->fullRange = nclxProfile->full_range_flag;
-
-    heif_nclx_color_profile_free(nclxProfile);
 
     return Status::Ok;
 }
