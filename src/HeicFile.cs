@@ -44,13 +44,12 @@ namespace HeicFileTypePlus
                 HeicNative.LoadFileIntoContext(context, fileIO);
 
                 SafeHeifImageHandle primaryImageHandle = null;
-                PrimaryImageInfo primaryImageInfo;
                 Surface surface = null;
                 bool disposeSurface = true;
 
                 try
                 {
-                    HeicNative.GetPrimaryImage(context, out primaryImageHandle, out primaryImageInfo);
+                    HeicNative.GetPrimaryImage(context, out primaryImageHandle, out PrimaryImageInfo primaryImageInfo);
 
                     surface = new Surface(primaryImageInfo.width, primaryImageInfo.height);
 

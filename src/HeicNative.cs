@@ -98,9 +98,7 @@ namespace HeicFileTypePlus
 
             if (RuntimeInformation.ProcessArchitecture == Architecture.X64)
             {
-                SafeHeifImageHandleX64 handle;
-
-                Status status = HeicIO_x64.GetPrimaryImage(context, out handle, info);
+                Status status = HeicIO_x64.GetPrimaryImage(context, out SafeHeifImageHandleX64 handle, info);
 
                 if (status == Status.Ok)
                 {
@@ -113,9 +111,7 @@ namespace HeicFileTypePlus
             }
             else if (RuntimeInformation.ProcessArchitecture == Architecture.X86)
             {
-                SafeHeifImageHandleX86 handle;
-
-                Status status = HeicIO_x86.GetPrimaryImage(context, out handle, info);
+                Status status = HeicIO_x86.GetPrimaryImage(context, out SafeHeifImageHandleX86 handle, info);
 
                 if (status == Status.Ok)
                 {
@@ -128,9 +124,7 @@ namespace HeicFileTypePlus
             }
             else if (RuntimeInformation.ProcessArchitecture == Architecture.Arm64)
             {
-                SafeHeifImageHandleARM64 handle;
-
-                Status status = HeicIO_ARM64.GetPrimaryImage(context, out handle, info);
+                Status status = HeicIO_ARM64.GetPrimaryImage(context, out SafeHeifImageHandleARM64 handle, info);
 
                 if (status == Status.Ok)
                 {
