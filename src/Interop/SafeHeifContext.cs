@@ -50,4 +50,16 @@ namespace HeicFileTypePlus.Interop
             return HeicIO_x86.DeleteContext(this.handle);
         }
     }
+
+    internal sealed class SafeHeifContextARM64 : SafeHeifContext
+    {
+        private SafeHeifContextARM64() : base(true)
+        {
+        }
+
+        protected override bool ReleaseHandle()
+        {
+            return HeicIO_ARM64.DeleteContext(this.handle);
+        }
+    }
 }

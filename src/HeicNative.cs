@@ -38,6 +38,10 @@ namespace HeicFileTypePlus
             {
                 context = HeicIO_x86.CreateContext();
             }
+            else if (RuntimeInformation.ProcessArchitecture == Architecture.Arm64)
+            {
+                context = HeicIO_ARM64.CreateContext();
+            }
             else
             {
                 throw new PlatformNotSupportedException();
@@ -62,6 +66,10 @@ namespace HeicFileTypePlus
             else if (RuntimeInformation.ProcessArchitecture == Architecture.X86)
             {
                 status = HeicIO_x86.LoadFileIntoContext(context, fileIO.IOCallbacksHandle);
+            }
+            else if (RuntimeInformation.ProcessArchitecture == Architecture.Arm64)
+            {
+                status = HeicIO_ARM64.LoadFileIntoContext(context, fileIO.IOCallbacksHandle);
             }
             else
             {
@@ -118,6 +126,21 @@ namespace HeicFileTypePlus
                     HandleReadError(status);
                 }
             }
+            else if (RuntimeInformation.ProcessArchitecture == Architecture.Arm64)
+            {
+                SafeHeifImageHandleARM64 handle;
+
+                Status status = HeicIO_ARM64.GetPrimaryImage(context, out handle, info);
+
+                if (status == Status.Ok)
+                {
+                    primaryImageHandle = handle;
+                }
+                else
+                {
+                    HandleReadError(status);
+                }
+            }
             else
             {
                 throw new PlatformNotSupportedException();
@@ -144,6 +167,10 @@ namespace HeicFileTypePlus
             {
                 status = HeicIO_x86.DecodeImage(imageHandle, ref bitmapData);
             }
+            else if (RuntimeInformation.ProcessArchitecture == Architecture.Arm64)
+            {
+                status = HeicIO_ARM64.DecodeImage(imageHandle, ref bitmapData);
+            }
             else
             {
                 throw new PlatformNotSupportedException();
@@ -167,6 +194,10 @@ namespace HeicFileTypePlus
             else if (RuntimeInformation.ProcessArchitecture == Architecture.X86)
             {
                 status = HeicIO_x86.GetICCProfileSize(imageHandle, out size);
+            }
+            else if (RuntimeInformation.ProcessArchitecture == Architecture.Arm64)
+            {
+                status = HeicIO_ARM64.GetICCProfileSize(imageHandle, out size);
             }
             else
             {
@@ -193,6 +224,10 @@ namespace HeicFileTypePlus
             {
                 status = HeicIO_x86.GetICCProfile(imageHandle, buffer, new UIntPtr((uint)buffer.Length));
             }
+            else if (RuntimeInformation.ProcessArchitecture == Architecture.Arm64)
+            {
+                status = HeicIO_ARM64.GetICCProfile(imageHandle, buffer, new UIntPtr((uint)buffer.Length));
+            }
             else
             {
                 throw new PlatformNotSupportedException();
@@ -215,6 +250,10 @@ namespace HeicFileTypePlus
             else if (RuntimeInformation.ProcessArchitecture == Architecture.X86)
             {
                 status = HeicIO_x86.GetCICPColorData(imageHandle, out colorData);
+            }
+            else if (RuntimeInformation.ProcessArchitecture == Architecture.Arm64)
+            {
+                status = HeicIO_ARM64.GetCICPColorData(imageHandle, out colorData);
             }
             else
             {
@@ -240,6 +279,10 @@ namespace HeicFileTypePlus
             {
                 status = HeicIO_x86.GetMetadataSize(imageHandle, metadataType, out size);
             }
+            else if (RuntimeInformation.ProcessArchitecture == Architecture.Arm64)
+            {
+                status = HeicIO_ARM64.GetMetadataSize(imageHandle, metadataType, out size);
+            }
             else
             {
                 throw new PlatformNotSupportedException();
@@ -264,6 +307,10 @@ namespace HeicFileTypePlus
             else if (RuntimeInformation.ProcessArchitecture == Architecture.X86)
             {
                 status = HeicIO_x86.GetMetadata(imageHandle, metadataType, buffer, new UIntPtr((uint)buffer.Length));
+            }
+            else if (RuntimeInformation.ProcessArchitecture == Architecture.Arm64)
+            {
+                status = HeicIO_ARM64.GetMetadata(imageHandle, metadataType, buffer, new UIntPtr((uint)buffer.Length));
             }
             else
             {
@@ -300,6 +347,10 @@ namespace HeicFileTypePlus
             else if (RuntimeInformation.ProcessArchitecture == Architecture.X86)
             {
                 status = HeicIO_x86.SaveToFile(ref bitmapData, options, metadata, ref colorData, fileIO.IOCallbacksHandle, progressCallback);
+            }
+            else if (RuntimeInformation.ProcessArchitecture == Architecture.Arm64)
+            {
+                status = HeicIO_ARM64.SaveToFile(ref bitmapData, options, metadata, ref colorData, fileIO.IOCallbacksHandle, progressCallback);
             }
             else
             {

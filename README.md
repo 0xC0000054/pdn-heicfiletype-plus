@@ -5,7 +5,7 @@ A [Paint.NET](http://www.getpaint.net) filetype plugin that allows HEIC images t
 ## Installation
 
 1. Close Paint.NET.
-2. Place HeicFileTypePlus.dll, HeicFileTypePlusIO_x86.dll and HeicFileTypePlusIO_x64.dll in the Paint.NET FileTypes folder which is usually located in one the following locations depending on the Paint.NET version you have installed.
+2. Place HeicFileTypePlus.dll, HeicFileTypePlusIO_ARM64.dll, HeicFileTypePlusIO_x86.dll and HeicFileTypePlusIO_x64.dll in the Paint.NET FileTypes folder which is usually located in one the following locations depending on the Paint.NET version you have installed.
 
   Paint.NET Version |  FileTypes Folder Location
   --------|----------

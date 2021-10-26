@@ -8,16 +8,19 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Remove="ARM64\**" />
     <Compile Remove="Debug\**" />
     <Compile Remove="deps\**" />
     <Compile Remove="HeicFileTypePlusIO\**" />
     <Compile Remove="Release\**" />
     <Compile Remove="x64\**" />
+    <EmbeddedResource Remove="ARM64\**" />
     <EmbeddedResource Remove="Debug\**" />
     <EmbeddedResource Remove="deps\**" />
     <EmbeddedResource Remove="HeicFileTypePlusIO\**" />
     <EmbeddedResource Remove="Release\**" />
     <EmbeddedResource Remove="x64\**" />
+    <None Remove="ARM64\**" />
     <None Remove="Debug\**" />
     <None Remove="deps\**" />
     <None Remove="HeicFileTypePlusIO\**" />
