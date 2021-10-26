@@ -37,7 +37,7 @@ namespace HeicFileTypePlus.Interop
         }
 
         private static readonly int NativeEncoderMetadataSize = Marshal.SizeOf(typeof(NativeEncoderMetadata));
-        private static readonly EncoderMetadataCustomMarshaler instance = new EncoderMetadataCustomMarshaler();
+        private static readonly EncoderMetadataCustomMarshaler instance = new();
 
 #pragma warning disable IDE0060 // Remove unused parameter
         public static ICustomMarshaler GetInstance(string cookie)

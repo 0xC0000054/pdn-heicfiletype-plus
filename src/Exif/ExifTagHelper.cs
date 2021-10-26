@@ -22,7 +22,7 @@ namespace HeicFileTypePlus.Exif
 {
     internal static class ExifTagHelper
     {
-        private static readonly HashSet<ushort> supportedTiffImageTagsForWriting = new HashSet<ushort>
+        private static readonly HashSet<ushort> supportedTiffImageTagsForWriting = new()
         {
             // The tags related to storing offsets are included for reference,
             // but are not written to the EXIF blob.

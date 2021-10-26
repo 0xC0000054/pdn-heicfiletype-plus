@@ -38,7 +38,7 @@ namespace HeicFileTypePlus
         {
             Document doc = null;
 
-            using (HeifFileIO fileIO = new HeifFileIO(input, leaveOpen: true))
+            using (HeifFileIO fileIO = new(input, leaveOpen: true))
             using (SafeHeifContext context = HeicNative.CreateContext())
             {
                 HeicNative.LoadFileIntoContext(context, fileIO);
@@ -95,7 +95,7 @@ namespace HeicFileTypePlus
 
             bool grayscale = IsGrayscaleImage(scratchSurface);
 
-            EncoderOptions options = new EncoderOptions
+            EncoderOptions options = new()
             {
                 quality = quality,
                 // YUV 4:0:0 is always used for gray-scale images because it
@@ -109,7 +109,7 @@ namespace HeicFileTypePlus
             EncoderMetadata metadata = CreateEncoderMetadata(input);
 
             // Use BT.709 with sRGB transfer characteristics as the default.
-            CICPColorData colorData = new CICPColorData
+            CICPColorData colorData = new()
             {
                 colorPrimaries = CICPColorPrimaries.BT709,
                 transferCharacteristics = CICPTransferCharacteristics.Srgb,
@@ -145,7 +145,7 @@ namespace HeicFileTypePlus
                 }
             }
 
-            using (HeifFileIO fileIO = new HeifFileIO(output, leaveOpen: true))
+            using (HeifFileIO fileIO = new(output, leaveOpen: true))
             {
                 HeicNative.SaveToFile(scratchSurface, options, metadata, ref colorData, fileIO, ReportProgress);
             }
@@ -297,7 +297,7 @@ namespace HeicFileTypePlus
                                                                               (int)property.Path.Section));
                     }
 
-                    MetadataKey metadataKey = new MetadataKey(section, property.Path.TagID);
+                    MetadataKey metadataKey = new(section, property.Path.TagID);
 
                     if (!items.ContainsKey(metadataKey))
                     {
@@ -373,7 +373,7 @@ namespace HeicFileTypePlus
 
                 if (dataLength > 0)
                 {
-                    using (MemoryStream stream = new MemoryStream(exifData, startIndex, dataLength))
+                    using (MemoryStream stream = new(exifData, startIndex, dataLength))
                     {
                         metadataEntries = ExifParser.Parse(stream);
                     }

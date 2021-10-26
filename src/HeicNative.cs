@@ -143,7 +143,7 @@ namespace HeicFileTypePlus
 
         internal static unsafe void DecodeImage(SafeHeifImageHandle imageHandle, Surface surface)
         {
-            BitmapData bitmapData = new BitmapData
+            BitmapData bitmapData = new()
             {
                 scan0 = (byte*)surface.Scan0.VoidStar,
                 width = surface.Width,
@@ -324,7 +324,7 @@ namespace HeicFileTypePlus
                                                HeifFileIO fileIO,
                                                HeifProgressCallback progressCallback)
         {
-            BitmapData bitmapData = new BitmapData
+            BitmapData bitmapData = new()
             {
                 scan0 = (byte*)surface.Scan0.VoidStar,
                 width = surface.Width,

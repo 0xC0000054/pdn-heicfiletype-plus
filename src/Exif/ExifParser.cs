@@ -41,7 +41,7 @@ namespace HeicFileTypePlus.Exif
                 throw new ArgumentNullException(nameof(stream));
             }
 
-            List<MetadataEntry> metadataEntries = new List<MetadataEntry>();
+            List<MetadataEntry> metadataEntries = new();
 
             try
             {
@@ -49,7 +49,7 @@ namespace HeicFileTypePlus.Exif
 
                 if (byteOrder.HasValue)
                 {
-                    using (EndianBinaryReader reader = new EndianBinaryReader(stream, byteOrder.Value, true))
+                    using (EndianBinaryReader reader = new(stream, byteOrder.Value, true))
                     {
                         ushort signature = reader.ReadUInt16();
 
@@ -73,7 +73,7 @@ namespace HeicFileTypePlus.Exif
 
         private static ICollection<MetadataEntry> ConvertIFDEntriesToMetadataEntries(EndianBinaryReader reader, List<ParserIFDEntry> entries)
         {
-            List<MetadataEntry> metadataEntries = new List<MetadataEntry>(entries.Count);
+            List<MetadataEntry> metadataEntries = new(entries.Count);
             bool swapNumberByteOrder = reader.Endianess == Endianess.Big;
 
             for (int i = 0; i < entries.Count; i++)
@@ -149,13 +149,13 @@ namespace HeicFileTypePlus.Exif
 
         private static List<ParserIFDEntry> ParseDirectories(EndianBinaryReader reader, uint firstIFDOffset)
         {
-            List<ParserIFDEntry> items = new List<ParserIFDEntry>();
+            List<ParserIFDEntry> items = new();
 
             bool foundExif = false;
             bool foundGps = false;
             bool foundInterop = false;
 
-            Queue<MetadataOffset> ifdOffsets = new Queue<MetadataOffset>();
+            Queue<MetadataOffset> ifdOffsets = new();
             ifdOffsets.Enqueue(new MetadataOffset(MetadataSection.Image, firstIFDOffset));
 
             while (ifdOffsets.Count > 0)
@@ -182,7 +182,7 @@ namespace HeicFileTypePlus.Exif
 
                 for (int i = 0; i < count; i++)
                 {
-                    ParserIFDEntry entry = new ParserIFDEntry(reader, section);
+                    ParserIFDEntry entry = new(reader, section);
 
                     switch (entry.Tag)
                     {
@@ -591,7 +591,7 @@ namespace HeicFileTypePlus.Exif
                     }
                     else
                     {
-                        StringBuilder builder = new StringBuilder();
+                        StringBuilder builder = new();
 
                         uint lastItemIndex = count - 1;
 
