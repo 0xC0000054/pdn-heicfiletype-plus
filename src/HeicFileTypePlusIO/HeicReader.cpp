@@ -87,6 +87,12 @@ Status HeicReader::LoadFileIntoContext(
                 status = Status::UnsupportedFormat;
                 break;
             case heif_error_Invalid_input:
+                if (error.subcode == heif_suberror_No_ftyp_box)
+                {
+                    status = Status::NoFtypBox;
+                    break;
+                }
+                [[fallthrough]];
             default:
                 if (copyErrorDetails)
                 {

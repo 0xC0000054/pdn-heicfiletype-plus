@@ -38,36 +38,60 @@ namespace HeicFileTypePlus
         {
             Document doc = null;
 
-            using (HeifFileIO fileIO = new(input, leaveOpen: true))
-            using (SafeHeifContext context = HeicNative.CreateContext())
+            long originalStreamPosition = input.Position;
+
+
+            try
             {
-                HeicNative.LoadFileIntoContext(context, fileIO);
-
-                SafeHeifImageHandle primaryImageHandle = null;
-                Surface surface = null;
-                bool disposeSurface = true;
-
-                try
+                using (HeifFileIO fileIO = new(input, leaveOpen: true))
+                using (SafeHeifContext context = HeicNative.CreateContext())
                 {
-                    HeicNative.GetPrimaryImage(context, out primaryImageHandle, out PrimaryImageInfo primaryImageInfo);
+                    HeicNative.LoadFileIntoContext(context, fileIO);
 
-                    surface = new Surface(primaryImageInfo.width, primaryImageInfo.height);
+                    SafeHeifImageHandle primaryImageHandle = null;
+                    Surface surface = null;
+                    bool disposeSurface = true;
 
-                    HeicNative.DecodeImage(primaryImageHandle, surface);
-
-                    doc = new Document(surface.Width, surface.Height);
-                    AddMetadataToDocument(doc, primaryImageHandle, primaryImageInfo);
-                    doc.Layers.Add(Layer.CreateBackgroundLayer(surface, true));
-                    disposeSurface = false;
-                }
-                finally
-                {
-                    primaryImageHandle?.Dispose();
-
-                    if (disposeSurface)
+                    try
                     {
-                        surface?.Dispose();
+                        HeicNative.GetPrimaryImage(context, out primaryImageHandle, out PrimaryImageInfo primaryImageInfo);
+
+                        surface = new Surface(primaryImageInfo.width, primaryImageInfo.height);
+
+                        HeicNative.DecodeImage(primaryImageHandle, surface);
+
+                        doc = new Document(surface.Width, surface.Height);
+                        AddMetadataToDocument(doc, primaryImageHandle, primaryImageInfo);
+                        doc.Layers.Add(Layer.CreateBackgroundLayer(surface, true));
+                        disposeSurface = false;
                     }
+                    finally
+                    {
+                        primaryImageHandle?.Dispose();
+
+                        if (disposeSurface)
+                        {
+                            surface?.Dispose();
+                        }
+                    }
+                }
+            }
+            catch (NoFtypeBoxException ex)
+            {
+                input.Position = originalStreamPosition;
+
+                if (FormatDetection.IsKnownImageFormat(input))
+                {
+                    input.Position = originalStreamPosition;
+
+                    using (System.Drawing.Image image = System.Drawing.Image.FromStream(input))
+                    {
+                        doc = Document.FromGdipImage(image);
+                    }
+                }
+                else
+                {
+                    throw new FormatException(ex.Message);
                 }
             }
 

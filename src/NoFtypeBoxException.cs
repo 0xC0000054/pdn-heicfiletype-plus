@@ -16,27 +16,16 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace HeicFileTypePlus.Interop
+using System;
+
+#nullable enable
+
+namespace HeicFileTypePlus
 {
-    internal enum Status
+    internal sealed class NoFtypeBoxException : Exception
     {
-        Ok,
-        NullParameter,
-        InvalidParameter,
-        OutOfMemory,
-        InvalidFile,
-        UnsupportedFeature,
-        UnsupportedFormat,
-        DecodeFailed,
-        BufferTooSmall,
-        ColorInformationError,
-        NoMatchingMetadata,
-        MetadataError,
-        EncodeFailed,
-        UnknownYUVFormat,
-        WriteError,
-        UserCanceled,
-        NoFtypBox,
-        UnknownError
+        public NoFtypeBoxException(string? message) : base(message)
+        {
+        }
     }
 }

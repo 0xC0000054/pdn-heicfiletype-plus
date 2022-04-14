@@ -53,6 +53,7 @@ enum class Status
     UnknownYUVFormat,
     WriteError,
     UserCanceled,
+    NoFtypBox,
     UnknownError
 };
 

@@ -434,6 +434,8 @@ namespace HeicFileTypePlus
                     break;
                 case Status.MetadataError:
                     throw new FormatException("Unable to get the image metadata.");
+                case Status.NoFtypBox:
+                    throw new NoFtypeBoxException("The HEIC file is invalid: No 'ftyp' box.");
                 case Status.UnknownError:
                 default:
                     throw new FormatException("An unknown error occurred when loading the image.");
