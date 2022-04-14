@@ -31,6 +31,8 @@
 extern "C" {
 #endif // __cplusplus
 
+typedef void(__stdcall* CopyErrorDetails)(const char* message);
+
 typedef bool(__stdcall* ProgressProc)(double progress);
 
 enum class Status
@@ -159,12 +161,16 @@ HEICFILETYPEPLUSIO_API bool __stdcall DeleteContext(heif_context* context);
 
 HEICFILETYPEPLUSIO_API bool __stdcall DeleteImageHandle(heif_image_handle* handle);
 
-HEICFILETYPEPLUSIO_API Status __stdcall LoadFileIntoContext(heif_context* context, IOCallbacks* callbacks);
+HEICFILETYPEPLUSIO_API Status __stdcall LoadFileIntoContext(
+    heif_context* context,
+    IOCallbacks* callbacks,
+    const CopyErrorDetails copyErrorDetails);
 
 HEICFILETYPEPLUSIO_API Status __stdcall GetPrimaryImage(
     heif_context* context,
     heif_image_handle** primaryImageHandle,
-    PrimaryImageInfo* info);
+    PrimaryImageInfo* info,
+    const CopyErrorDetails copyErrorDetails);
 
 HEICFILETYPEPLUSIO_API Status __stdcall DecodeImage(heif_image_handle* imageHandle, BitmapData* output);
 

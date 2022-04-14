@@ -37,12 +37,16 @@ namespace HeicFileTypePlus.Interop
         internal static extern bool DeleteImageHandle(IntPtr handle);
 
         [DllImport(DllName, CallingConvention = CallingConvention.StdCall)]
-        internal static extern Status LoadFileIntoContext(SafeHeifContext context, SafeHandle callbacks);
+        internal static extern Status LoadFileIntoContext(
+            SafeHeifContext context,
+            SafeHandle callbacks,
+            [MarshalAs(UnmanagedType.FunctionPtr)] HeicErrorDetailsCopy copyErrorDetails);
 
         [DllImport(DllName, CallingConvention = CallingConvention.StdCall)]
         internal static extern Status GetPrimaryImage(SafeHeifContext context,
                                                       out SafeHeifImageHandleX86 primaryImageHandle,
-                                                      [In, Out] PrimaryImageInfo info);
+                                                      [In, Out] PrimaryImageInfo info,
+                                                      [MarshalAs(UnmanagedType.FunctionPtr)] HeicErrorDetailsCopy copyErrorDetails);
 
         [DllImport(DllName, CallingConvention = CallingConvention.StdCall)]
         internal static extern Status DecodeImage(SafeHeifImageHandle imageHandle, [In] ref BitmapData bitmapData);

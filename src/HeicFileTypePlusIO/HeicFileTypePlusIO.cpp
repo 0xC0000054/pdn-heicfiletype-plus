@@ -53,12 +53,19 @@ bool __stdcall DeleteImageHandle(heif_image_handle* handle)
     return true;
 }
 
-Status __stdcall LoadFileIntoContext(heif_context* context, IOCallbacks* callbacks)
+Status __stdcall LoadFileIntoContext(
+    heif_context* context,
+    IOCallbacks* callbacks,
+    const CopyErrorDetails copyErrorDetails)
 {
-    return HeicReader::LoadFileIntoContext(context, callbacks);
+    return HeicReader::LoadFileIntoContext(context, callbacks, copyErrorDetails);
 }
 
-Status __stdcall GetPrimaryImage(heif_context* context, heif_image_handle** primaryImageHandle, PrimaryImageInfo* info)
+Status __stdcall GetPrimaryImage(
+    heif_context* context,
+    heif_image_handle** primaryImageHandle,
+    PrimaryImageInfo* info,
+    const CopyErrorDetails copyErrorDetails)
 {
     if (!context || !primaryImageHandle || !info)
     {
@@ -74,11 +81,19 @@ Status __stdcall GetPrimaryImage(heif_context* context, heif_image_handle** prim
         case heif_error_Memory_allocation_error:
             return Status::OutOfMemory;
         case heif_error_Unsupported_feature:
+            if (copyErrorDetails)
+            {
+                copyErrorDetails(error.message);
+            }
             return Status::UnsupportedFeature;
         case heif_error_Unsupported_filetype:
             return Status::UnsupportedFormat;
         case heif_error_Invalid_input:
         default:
+            if (copyErrorDetails)
+            {
+                copyErrorDetails(error.message);
+            }
             return Status::InvalidFile;
         }
     }

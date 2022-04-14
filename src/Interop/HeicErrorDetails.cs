@@ -1,4 +1,4 @@
-// This file is part of pdn-heicfiletype-plus, a libheif-based HEIC
+﻿// This file is part of pdn-heicfiletype-plus, a libheif-based HEIC
 // FileType plugin for Paint.NET.
 //
 // Copyright (C) 2020, 2021, 2022 Nicholas Hayes
@@ -16,14 +16,29 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#pragma once
+using System;
 
-#include "HeicFileTypePlusIO.h"
-
-namespace HeicReader
+namespace HeicFileTypePlus.Interop
 {
-    Status LoadFileIntoContext(
-        heif_context* const context,
-        IOCallbacks* const callbacks,
-        const CopyErrorDetails copyErrorDetails);
+    internal unsafe delegate void HeicErrorDetailsCopy(sbyte* messsage);
+
+    internal sealed class HeicErrorDetails
+    {
+        internal string Message { get; private set; }
+
+        internal unsafe void Copy(sbyte* message)
+        {
+            if (message is not null)
+            {
+                try
+                {
+                    this.Message = new string(message);
+                }
+                catch (ArgumentException)
+                {
+                    // The string longer than int.MaxValue.
+                }
+            }
+        }
+    }
 }

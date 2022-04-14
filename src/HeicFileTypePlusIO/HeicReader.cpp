@@ -51,7 +51,10 @@ namespace
     }
 }
 
-Status HeicReader::LoadFileIntoContext(heif_context* const context, IOCallbacks* const callbacks)
+Status HeicReader::LoadFileIntoContext(
+    heif_context* const context,
+    IOCallbacks* const callbacks,
+    const CopyErrorDetails copyErrorDetails)
 {
     if (!context || !callbacks)
     {
@@ -74,6 +77,10 @@ Status HeicReader::LoadFileIntoContext(heif_context* const context, IOCallbacks*
                 status = Status::OutOfMemory;
                 break;
             case heif_error_Unsupported_feature:
+                if (copyErrorDetails)
+                {
+                    copyErrorDetails(error.message);
+                }
                 status = Status::UnsupportedFeature;
                 break;
             case heif_error_Unsupported_filetype:
@@ -81,6 +88,10 @@ Status HeicReader::LoadFileIntoContext(heif_context* const context, IOCallbacks*
                 break;
             case heif_error_Invalid_input:
             default:
+                if (copyErrorDetails)
+                {
+                    copyErrorDetails(error.message);
+                }
                 status = Status::InvalidFile;
                 break;
             }

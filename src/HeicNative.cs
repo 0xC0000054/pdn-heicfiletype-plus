@@ -19,6 +19,7 @@
 using HeicFileTypePlus.Interop;
 using PaintDotNet;
 using System;
+using System.Globalization;
 using System.IO;
 using System.Runtime.InteropServices;
 
@@ -55,26 +56,37 @@ namespace HeicFileTypePlus
             return context;
         }
 
-        internal static void LoadFileIntoContext(SafeHeifContext context, HeifFileIO fileIO)
+        internal static unsafe void LoadFileIntoContext(SafeHeifContext context, HeifFileIO fileIO)
         {
             Status status;
 
+            HeicErrorDetails errorDetails = new();
+            HeicErrorDetailsCopy copyErrorDetailsCallback = new(errorDetails.Copy);
+
             if (RuntimeInformation.ProcessArchitecture == Architecture.X64)
             {
-                status = HeicIO_x64.LoadFileIntoContext(context, fileIO.IOCallbacksHandle);
+                status = HeicIO_x64.LoadFileIntoContext(context,
+                                                        fileIO.IOCallbacksHandle,
+                                                        copyErrorDetailsCallback);
             }
             else if (RuntimeInformation.ProcessArchitecture == Architecture.X86)
             {
-                status = HeicIO_x86.LoadFileIntoContext(context, fileIO.IOCallbacksHandle);
+                status = HeicIO_x86.LoadFileIntoContext(context,
+                                                        fileIO.IOCallbacksHandle,
+                                                        copyErrorDetailsCallback);
             }
             else if (RuntimeInformation.ProcessArchitecture == Architecture.Arm64)
             {
-                status = HeicIO_ARM64.LoadFileIntoContext(context, fileIO.IOCallbacksHandle);
+                status = HeicIO_ARM64.LoadFileIntoContext(context,
+                                                          fileIO.IOCallbacksHandle,
+                                                          copyErrorDetailsCallback);
             }
             else
             {
                 throw new PlatformNotSupportedException();
             }
+
+            GC.KeepAlive(copyErrorDetailsCallback);
 
             if (status != Status.Ok)
             {
@@ -84,21 +96,27 @@ namespace HeicFileTypePlus
                 }
                 else
                 {
-                    HandleReadError(status);
+                    HandleReadError(status, errorDetails.Message);
                 }
             }
         }
 
-        internal static void GetPrimaryImage(SafeHeifContext context,
-                                             out SafeHeifImageHandle primaryImageHandle,
-                                             out PrimaryImageInfo info)
+        internal static unsafe void GetPrimaryImage(SafeHeifContext context,
+                                                    out SafeHeifImageHandle primaryImageHandle,
+                                                    out PrimaryImageInfo info)
         {
             primaryImageHandle = null;
             info = new PrimaryImageInfo();
 
+            HeicErrorDetails errorDetails = new();
+            HeicErrorDetailsCopy copyErrorDetailsCallback = new(errorDetails.Copy);
+
             if (RuntimeInformation.ProcessArchitecture == Architecture.X64)
             {
-                Status status = HeicIO_x64.GetPrimaryImage(context, out SafeHeifImageHandleX64 handle, info);
+                Status status = HeicIO_x64.GetPrimaryImage(context,
+                                                           out SafeHeifImageHandleX64 handle,
+                                                           info,
+                                                           copyErrorDetailsCallback);
 
                 if (status == Status.Ok)
                 {
@@ -106,12 +124,15 @@ namespace HeicFileTypePlus
                 }
                 else
                 {
-                    HandleReadError(status);
+                    HandleReadError(status, errorDetails.Message);
                 }
             }
             else if (RuntimeInformation.ProcessArchitecture == Architecture.X86)
             {
-                Status status = HeicIO_x86.GetPrimaryImage(context, out SafeHeifImageHandleX86 handle, info);
+                Status status = HeicIO_x86.GetPrimaryImage(context,
+                                                           out SafeHeifImageHandleX86 handle,
+                                                           info,
+                                                           copyErrorDetailsCallback);
 
                 if (status == Status.Ok)
                 {
@@ -119,12 +140,15 @@ namespace HeicFileTypePlus
                 }
                 else
                 {
-                    HandleReadError(status);
+                    HandleReadError(status, errorDetails.Message);
                 }
             }
             else if (RuntimeInformation.ProcessArchitecture == Architecture.Arm64)
             {
-                Status status = HeicIO_ARM64.GetPrimaryImage(context, out SafeHeifImageHandleARM64 handle, info);
+                Status status = HeicIO_ARM64.GetPrimaryImage(context,
+                                                             out SafeHeifImageHandleARM64 handle,
+                                                             info,
+                                                             copyErrorDetailsCallback);
 
                 if (status == Status.Ok)
                 {
@@ -132,13 +156,14 @@ namespace HeicFileTypePlus
                 }
                 else
                 {
-                    HandleReadError(status);
+                    HandleReadError(status, errorDetails.Message);
                 }
             }
             else
             {
                 throw new PlatformNotSupportedException();
             }
+            GC.KeepAlive(copyErrorDetailsCallback);
         }
 
         internal static unsafe void DecodeImage(SafeHeifImageHandle imageHandle, Surface surface)
@@ -364,7 +389,7 @@ namespace HeicFileTypePlus
             }
         }
 
-        private static void HandleReadError(Status status)
+        private static void HandleReadError(Status status, string errorDetails = null)
         {
             switch (status)
             {
@@ -375,9 +400,27 @@ namespace HeicFileTypePlus
                 case Status.OutOfMemory:
                     throw new OutOfMemoryException();
                 case Status.InvalidFile:
-                    throw new FormatException("The HEIC file is invalid.");
+                    if (!string.IsNullOrWhiteSpace(errorDetails))
+                    {
+                        throw new FormatException(string.Format(CultureInfo.CurrentCulture,
+                                                                "The HEIC file is invalid.\nDetails: {0}",
+                                                                errorDetails));
+                    }
+                    else
+                    {
+                        throw new FormatException("The HEIC file is invalid.");
+                    }
                 case Status.UnsupportedFeature:
-                    throw new FormatException("The file uses features that are not supported.");
+                    if (!string.IsNullOrWhiteSpace(errorDetails))
+                    {
+                        throw new FormatException(string.Format(CultureInfo.CurrentCulture,
+                                                                "The file uses features that are not supported.\nDetails: {0}",
+                                                                errorDetails));
+                    }
+                    else
+                    {
+                        throw new FormatException("The file uses features that are not supported.");
+                    }
                 case Status.UnsupportedFormat:
                     throw new FormatException("The file uses a format that is not supported.");
                 case Status.DecodeFailed:
