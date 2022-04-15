@@ -80,7 +80,7 @@ namespace HeicFileTypePlus
             {
                 input.Position = originalStreamPosition;
 
-                if (FormatDetection.IsKnownImageFormat(input))
+                if (FormatDetection.IsCommonImageFormat(input))
                 {
                     input.Position = originalStreamPosition;
 

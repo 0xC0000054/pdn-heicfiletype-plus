@@ -38,7 +38,7 @@ namespace HeicFileTypePlus
 
         private static ReadOnlySpan<byte> TiffLittleEndianFileSignature => new byte[] { 0x49, 0x49, 0x2a, 0x00 };
 
-        internal static bool IsKnownImageFormat(Stream stream)
+        internal static bool IsCommonImageFormat(Stream stream)
         {
             Span<byte> bytes = stackalloc byte[8];
 
