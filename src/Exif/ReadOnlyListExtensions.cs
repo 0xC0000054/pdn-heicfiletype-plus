@@ -16,13 +16,30 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+using PaintDotNet;
+using System.Collections.Generic;
+
 namespace HeicFileTypePlus.Exif
 {
-    internal enum MetadataSection
+    internal static class ReadOnlyListExtensions
     {
-        Image = 0,
-        Exif,
-        Gps,
-        Interop
+        internal static T[] AsArrayOrToArray<T>(this IReadOnlyList<T> items)
+        {
+            if (items is null)
+            {
+                ExceptionUtil.ThrowArgumentNullException(nameof(items));
+            }
+
+            T[] asArray = items as T[];
+
+            if (asArray is not null)
+            {
+                return asArray;
+            }
+            else
+            {
+                return PaintDotNet.Collections.EnumerableExtensions.ToArrayEx(items);
+            }
+        }
     }
 }

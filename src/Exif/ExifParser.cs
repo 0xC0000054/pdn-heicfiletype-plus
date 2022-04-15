@@ -16,7 +16,9 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+using PaintDotNet.Imaging;
 using System;
+using System.Buffers.Binary;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
@@ -41,7 +43,7 @@ namespace HeicFileTypePlus.Exif
                 throw new ArgumentNullException(nameof(stream));
             }
 
-            List<MetadataEntry> metadataEntries = new();
+            ExifValueCollection exifValues = null;
 
             try
             {
@@ -59,7 +61,7 @@ namespace HeicFileTypePlus.Exif
 
                             List<ParserIFDEntry> entries = ParseDirectories(reader, ifdOffset);
 
-                            metadataEntries.AddRange(ConvertIFDEntriesToMetadataEntries(reader, entries));
+                            exifValues = new ExifValueCollection(ConvertIFDEntriesToMetadataEntries(reader, entries));
                         }
                     }
                 }
@@ -68,239 +70,7 @@ namespace HeicFileTypePlus.Exif
             {
             }
 
-            return new ExifValueCollection(metadataEntries);
-        }
-
-        private static ICollection<MetadataEntry> ConvertIFDEntriesToMetadataEntries(EndianBinaryReader reader, List<ParserIFDEntry> entries)
-        {
-            List<MetadataEntry> metadataEntries = new(entries.Count);
-            bool swapNumberByteOrder = reader.Endianess == Endianess.Big;
-
-            for (int i = 0; i < entries.Count; i++)
-            {
-                ParserIFDEntry entry = entries[i];
-
-                byte[] propertyData;
-                if (entry.OffsetFieldContainsValue)
-                {
-                    propertyData = entry.GetValueBytesFromOffset();
-                    if (propertyData is null)
-                    {
-                        continue;
-                    }
-                }
-                else
-                {
-                    long bytesToRead = entry.Count * TagDataTypeUtil.GetSizeInBytes(entry.Type);
-
-                    // Skip any tags that are empty or larger than 2 GB.
-                    if (bytesToRead == 0 || bytesToRead > int.MaxValue)
-                    {
-                        continue;
-                    }
-
-                    uint offset = entry.Offset;
-
-                    if ((offset + bytesToRead) > reader.Length)
-                    {
-                        continue;
-                    }
-
-                    reader.Position = offset;
-
-                    propertyData = reader.ReadBytes((int)bytesToRead);
-
-                    if (swapNumberByteOrder)
-                    {
-                        // Paint.NET converts all multi-byte numbers to little-endian.
-                        switch (entry.Type)
-                        {
-                            case TagDataType.Short:
-                            case TagDataType.SShort:
-                                propertyData = SwapShortArrayToLittleEndian(propertyData, entry.Count);
-                                break;
-                            case TagDataType.Long:
-                            case TagDataType.SLong:
-                            case TagDataType.Float:
-                                propertyData = SwapLongArrayToLittleEndian(propertyData, entry.Count);
-                                break;
-                            case TagDataType.Rational:
-                            case TagDataType.SRational:
-                                propertyData = SwapRationalArrayToLittleEndian(propertyData, entry.Count);
-                                break;
-                            case TagDataType.Double:
-                                propertyData = SwapDoubleArrayToLittleEndian(propertyData, entry.Count);
-                                break;
-                            case TagDataType.Byte:
-                            case TagDataType.Ascii:
-                            case TagDataType.Undefined:
-                            case TagDataType.SByte:
-                            default:
-                                break;
-                        }
-                    }
-                }
-
-                metadataEntries.Add(new MetadataEntry(entry.Section, entry.Tag, entry.Type, propertyData));
-            }
-
-            return metadataEntries;
-        }
-
-        private static List<ParserIFDEntry> ParseDirectories(EndianBinaryReader reader, uint firstIFDOffset)
-        {
-            List<ParserIFDEntry> items = new();
-
-            bool foundExif = false;
-            bool foundGps = false;
-            bool foundInterop = false;
-
-            Queue<MetadataOffset> ifdOffsets = new();
-            ifdOffsets.Enqueue(new MetadataOffset(MetadataSection.Image, firstIFDOffset));
-
-            while (ifdOffsets.Count > 0)
-            {
-                MetadataOffset metadataOffset = ifdOffsets.Dequeue();
-
-                MetadataSection section = metadataOffset.Section;
-                uint offset = metadataOffset.Offset;
-
-                if (offset >= reader.Length)
-                {
-                    continue;
-                }
-
-                reader.Position = offset;
-
-                ushort count = reader.ReadUInt16();
-                if (count == 0)
-                {
-                    continue;
-                }
-
-                items.Capacity += count;
-
-                for (int i = 0; i < count; i++)
-                {
-                    ParserIFDEntry entry = new(reader, section);
-
-                    switch (entry.Tag)
-                    {
-                        case TiffConstants.Tags.ExifIFD:
-                            if (!foundExif)
-                            {
-                                foundExif = true;
-                                ifdOffsets.Enqueue(new MetadataOffset(MetadataSection.Exif, entry.Offset));
-                            }
-                            break;
-                        case TiffConstants.Tags.GpsIFD:
-                            if (!foundGps)
-                            {
-                                foundGps = true;
-                                ifdOffsets.Enqueue(new MetadataOffset(MetadataSection.Gps, entry.Offset));
-                            }
-                            break;
-                        case TiffConstants.Tags.InteropIFD:
-                            if (!foundInterop)
-                            {
-                                foundInterop = true;
-                                ifdOffsets.Enqueue(new MetadataOffset(MetadataSection.Interop, entry.Offset));
-                            }
-                            break;
-                        case TiffConstants.Tags.StripOffsets:
-                        case TiffConstants.Tags.RowsPerStrip:
-                        case TiffConstants.Tags.StripByteCounts:
-                        case TiffConstants.Tags.SubIFDs:
-                        case TiffConstants.Tags.ThumbnailOffset:
-                        case TiffConstants.Tags.ThumbnailLength:
-                            // Skip the thumbnail and/or preview images.
-                            // The StripOffsets and StripByteCounts tags are used to store a preview image in some formats.
-                            // The SubIFDs tag is used to store thumbnails in TIFF and for storing other data in some camera formats.
-                            //
-                            // Note that some cameras will also store a thumbnail as part of their private data in the EXIF MakerNote tag.
-                            // The EXIF MakerNote tag is treated as an opaque blob, so those thumbnails will be preserved.
-                            break;
-                        default:
-                            items.Add(entry);
-                            break;
-                    }
-
-                    System.Diagnostics.Debug.WriteLine(entry.ToString());
-                }
-            }
-
-            return items;
-        }
-
-        private static unsafe byte[] SwapDoubleArrayToLittleEndian(byte[] values, uint count)
-        {
-            fixed (byte* pBytes = values)
-            {
-                ulong* ptr = (ulong*)pBytes;
-                ulong* ptrEnd = ptr + count;
-
-                while (ptr < ptrEnd)
-                {
-                    *ptr = EndianUtil.Swap(*ptr);
-                    ptr++;
-                }
-            }
-
-            return values;
-        }
-
-        private static unsafe byte[] SwapLongArrayToLittleEndian(byte[] values, uint count)
-        {
-            fixed (byte* pBytes = values)
-            {
-                uint* ptr = (uint*)pBytes;
-                uint* ptrEnd = ptr + count;
-
-                while (ptr < ptrEnd)
-                {
-                    *ptr = EndianUtil.Swap(*ptr);
-                    ptr++;
-                }
-            }
-
-            return values;
-        }
-
-        private static unsafe byte[] SwapRationalArrayToLittleEndian(byte[] values, uint count)
-        {
-            // A rational value consists of two 4-byte values, a numerator and a denominator.
-            long itemCount = (long)count * 2;
-
-            fixed (byte* pBytes = values)
-            {
-                uint* ptr = (uint*)pBytes;
-                uint* ptrEnd = ptr + itemCount;
-
-                while (ptr < ptrEnd)
-                {
-                    *ptr = EndianUtil.Swap(*ptr);
-                    ptr++;
-                }
-            }
-
-            return values;
-        }
-
-        private static unsafe byte[] SwapShortArrayToLittleEndian(byte[] values, uint count)
-        {
-            fixed (byte* pBytes = values)
-            {
-                ushort* ptr = (ushort*)pBytes;
-                ushort* ptrEnd = ptr + count;
-
-                while (ptr < ptrEnd)
-                {
-                    *ptr = EndianUtil.Swap(*ptr);
-                    ptr++;
-                }
-            }
-
-            return values;
+            return exifValues;
         }
 
         private static Endianess? TryDetectTiffByteOrder(Stream stream)
@@ -333,24 +103,254 @@ namespace HeicFileTypePlus.Exif
             }
         }
 
+        private static Dictionary<ExifPropertyPath, ExifValue> ConvertIFDEntriesToMetadataEntries(EndianBinaryReader reader, List<ParserIFDEntry> entries)
+        {
+            Dictionary<ExifPropertyPath, ExifValue> items = new(entries.Count);
+            bool swapNumberByteOrder = reader.Endianess == Endianess.Big;
+
+            for (int i = 0; i < entries.Count; i++)
+            {
+                ParserIFDEntry entry = entries[i];
+
+                byte[] propertyData;
+                if (entry.OffsetFieldContainsValue)
+                {
+                    propertyData = entry.GetValueBytesFromOffset();
+                    if (propertyData == null)
+                    {
+                        continue;
+                    }
+                }
+                else
+                {
+                    long bytesToRead = entry.Count * ExifValueTypeUtil.GetSizeInBytes(entry.Type);
+
+                    // Skip any tags that are empty or larger than 2 GB.
+                    if (bytesToRead == 0 || bytesToRead > int.MaxValue)
+                    {
+                        continue;
+                    }
+
+                    uint offset = entry.Offset;
+
+                    if ((offset + bytesToRead) > reader.Length)
+                    {
+                        continue;
+                    }
+
+                    reader.Position = offset;
+
+                    propertyData = reader.ReadBytes((int)bytesToRead);
+
+                    if (swapNumberByteOrder)
+                    {
+                        // Paint.NET converts all multi-byte numbers to little-endian.
+                        switch (entry.Type)
+                        {
+                            case ExifValueType.Short:
+                            case ExifValueType.SShort:
+                                propertyData = SwapShortArrayToLittleEndian(propertyData, entry.Count);
+                                break;
+                            case ExifValueType.Long:
+                            case ExifValueType.SLong:
+                            case ExifValueType.Float:
+                                propertyData = SwapLongArrayToLittleEndian(propertyData, entry.Count);
+                                break;
+                            case ExifValueType.Rational:
+                            case ExifValueType.SRational:
+                                propertyData = SwapRationalArrayToLittleEndian(propertyData, entry.Count);
+                                break;
+                            case ExifValueType.Double:
+                                propertyData = SwapDoubleArrayToLittleEndian(propertyData, entry.Count);
+                                break;
+                            case ExifValueType.Byte:
+                            case ExifValueType.Ascii:
+                            case ExifValueType.Undefined:
+                            default:
+                                break;
+                        }
+                    }
+                }
+
+                items.TryAdd(new ExifPropertyPath(entry.Section, entry.Tag), new ExifValue(entry.Type, propertyData));
+            }
+
+            return items;
+        }
+
+        private static List<ParserIFDEntry> ParseDirectories(EndianBinaryReader reader, uint firstIFDOffset)
+        {
+            List<ParserIFDEntry> items = new();
+
+            bool foundExif = false;
+            bool foundGps = false;
+            bool foundInterop = false;
+
+            Queue<MetadataOffset> ifdOffsets = new();
+            ifdOffsets.Enqueue(new MetadataOffset(ExifSection.Image, firstIFDOffset));
+
+            while (ifdOffsets.Count > 0)
+            {
+                MetadataOffset metadataOffset = ifdOffsets.Dequeue();
+
+                ExifSection section = metadataOffset.Section;
+                uint offset = metadataOffset.Offset;
+
+                if (offset >= reader.Length)
+                {
+                    continue;
+                }
+
+                reader.Position = offset;
+
+                ushort count = reader.ReadUInt16();
+                if (count == 0)
+                {
+                    continue;
+                }
+
+                items.Capacity += count;
+
+                for (int i = 0; i < count; i++)
+                {
+                    ParserIFDEntry entry = new(reader, section);
+
+                    switch (entry.Tag)
+                    {
+                        case TiffConstants.Tags.ExifIFD:
+                            if (!foundExif)
+                            {
+                                foundExif = true;
+                                ifdOffsets.Enqueue(new MetadataOffset(ExifSection.Photo, entry.Offset));
+                            }
+                            break;
+                        case TiffConstants.Tags.GpsIFD:
+                            if (!foundGps)
+                            {
+                                foundGps = true;
+                                ifdOffsets.Enqueue(new MetadataOffset(ExifSection.GpsInfo, entry.Offset));
+                            }
+                            break;
+                        case TiffConstants.Tags.InteropIFD:
+                            if (!foundInterop)
+                            {
+                                foundInterop = true;
+                                ifdOffsets.Enqueue(new MetadataOffset(ExifSection.Interop, entry.Offset));
+                            }
+                            break;
+                        case TiffConstants.Tags.StripOffsets:
+                        case TiffConstants.Tags.RowsPerStrip:
+                        case TiffConstants.Tags.StripByteCounts:
+                        case TiffConstants.Tags.SubIFDs:
+                        case TiffConstants.Tags.ThumbnailOffset:
+                        case TiffConstants.Tags.ThumbnailLength:
+                            // Skip the thumbnail and/or preview images.
+                            // The StripOffsets and StripByteCounts tags are used to store a preview image in some formats.
+                            // The SubIFDs tag is used to store thumbnails in TIFF and for storing other data in some camera formats.
+                            //
+                            // Note that some cameras will also store a thumbnail as part of their private data in the EXIF MakerNote tag.
+                            // The EXIF MakerNote tag is treated as an opaque blob, so those thumbnails will be preserved.
+                            break;
+                        default:
+                            items.Add(entry);
+                            break;
+                    }
+
+                    System.Diagnostics.Debug.WriteLine(entry.ToString());
+                }
+            }
+
+            return items;
+        }
+
+        private static unsafe byte[] SwapShortArrayToLittleEndian(byte[] values, uint count)
+        {
+            fixed (byte* pBytes = values)
+            {
+                ushort* ptr = (ushort*)pBytes;
+                ushort* ptrEnd = ptr + count;
+
+                while (ptr < ptrEnd)
+                {
+                    *ptr = BinaryPrimitives.ReverseEndianness(*ptr);
+                    ptr++;
+                }
+            }
+
+            return values;
+        }
+
+        private static unsafe byte[] SwapLongArrayToLittleEndian(byte[] values, uint count)
+        {
+            fixed (byte* pBytes = values)
+            {
+                uint* ptr = (uint*)pBytes;
+                uint* ptrEnd = ptr + count;
+
+                while (ptr < ptrEnd)
+                {
+                    *ptr = BinaryPrimitives.ReverseEndianness(*ptr);
+                    ptr++;
+                }
+            }
+
+            return values;
+        }
+
+        private static unsafe byte[] SwapRationalArrayToLittleEndian(byte[] values, uint count)
+        {
+            // A rational value consists of two 4-byte values, a numerator and a denominator.
+            long itemCount = (long)count * 2;
+
+            fixed (byte* pBytes = values)
+            {
+                uint* ptr = (uint*)pBytes;
+                uint* ptrEnd = ptr + itemCount;
+
+                while (ptr < ptrEnd)
+                {
+                    *ptr = BinaryPrimitives.ReverseEndianness(*ptr);
+                    ptr++;
+                }
+            }
+
+            return values;
+        }
+
+        private static unsafe byte[] SwapDoubleArrayToLittleEndian(byte[] values, uint count)
+        {
+            fixed (byte* pBytes = values)
+            {
+                ulong* ptr = (ulong*)pBytes;
+                ulong* ptrEnd = ptr + count;
+
+                while (ptr < ptrEnd)
+                {
+                    *ptr = BinaryPrimitives.ReverseEndianness(*ptr);
+                    ptr++;
+                }
+            }
+
+            return values;
+        }
+
         private readonly struct ParserIFDEntry
         {
 #pragma warning disable IDE0032 // Use auto property
             private readonly IFDEntry entry;
-            private readonly MetadataSection section;
             private readonly bool offsetIsBigEndian;
 #pragma warning restore IDE0032 // Use auto property
 
-            public ParserIFDEntry(EndianBinaryReader reader, MetadataSection section)
+            public ParserIFDEntry(EndianBinaryReader reader, ExifSection section)
             {
                 this.entry = new IFDEntry(reader);
-                this.section = section;
                 this.offsetIsBigEndian = reader.Endianess == Endianess.Big;
+                this.Section = section;
             }
 
             public ushort Tag => this.entry.Tag;
 
-            public TagDataType Type => this.entry.Type;
+            public ExifValueType Type => this.entry.Type;
 
             public uint Count => this.entry.Count;
 
@@ -360,13 +360,11 @@ namespace HeicFileTypePlus.Exif
             {
                 get
                 {
-                    return TagDataTypeUtil.ValueFitsInOffsetField(this.Type, this.Count);
+                    return ExifValueTypeUtil.ValueFitsInOffsetField(this.Type, this.Count);
                 }
             }
 
-#pragma warning disable IDE0032 // Use auto property
-            public MetadataSection Section => this.section;
-#pragma warning restore IDE0032 // Use auto property
+            public ExifSection Section { get; }
 
             public unsafe byte[] GetValueBytesFromOffset()
             {
@@ -375,7 +373,7 @@ namespace HeicFileTypePlus.Exif
                     return null;
                 }
 
-                TagDataType type = this.entry.Type;
+                ExifValueType type = this.entry.Type;
                 uint count = this.entry.Count;
                 uint offset = this.entry.Offset;
 
@@ -386,10 +384,10 @@ namespace HeicFileTypePlus.Exif
 
                 // Paint.NET always stores data in little-endian byte order.
                 byte[] bytes;
-                if (type == TagDataType.Byte ||
-                    type == TagDataType.Ascii ||
-                    type == TagDataType.SByte ||
-                    type == TagDataType.Undefined)
+                if (type == ExifValueType.Byte
+                    || type == ExifValueType.Ascii
+                    || type == (ExifValueType)6 // SByte
+                    || type == ExifValueType.Undefined)
                 {
                     bytes = new byte[count];
 
@@ -442,7 +440,7 @@ namespace HeicFileTypePlus.Exif
                         }
                     }
                 }
-                else if (type == TagDataType.Short || type == TagDataType.SShort)
+                else if (type == ExifValueType.Short || type == ExifValueType.SShort)
                 {
                     int byteArrayLength = unchecked((int)count) * sizeof(ushort);
                     bytes = new byte[byteArrayLength];
@@ -517,7 +515,7 @@ namespace HeicFileTypePlus.Exif
             {
                 string valueString;
 
-                TagDataType type = this.entry.Type;
+                ExifValueType type = this.entry.Type;
                 uint count = this.entry.Count;
                 uint offset = this.entry.Offset;
 
@@ -526,7 +524,7 @@ namespace HeicFileTypePlus.Exif
                     return string.Empty;
                 }
 
-                int typeSizeInBytes = TagDataTypeUtil.GetSizeInBytes(type);
+                int typeSizeInBytes = ExifValueTypeUtil.GetSizeInBytes(type);
 
                 if (typeSizeInBytes == 1)
                 {
@@ -581,9 +579,9 @@ namespace HeicFileTypePlus.Exif
                         }
                     }
 
-                    if (type == TagDataType.Ascii)
+                    if (type == ExifValueType.Ascii)
                     {
-                        valueString = Encoding.ASCII.GetString(bytes).TrimEnd('\0');
+                        valueString = Encoding.UTF8.GetString(bytes).TrimEnd('\0');
                     }
                     else if (count == 1)
                     {
@@ -601,7 +599,7 @@ namespace HeicFileTypePlus.Exif
 
                             if (i < lastItemIndex)
                             {
-                                builder.Append(",");
+                                builder.Append(',');
                             }
                         }
 
@@ -642,10 +640,10 @@ namespace HeicFileTypePlus.Exif
                     {
                         switch (type)
                         {
-                            case TagDataType.SShort:
+                            case ExifValueType.SShort:
                                 valueString = ((short)values[0]).ToString(CultureInfo.InvariantCulture);
                                 break;
-                            case TagDataType.Short:
+                            case ExifValueType.Short:
                             default:
                                 valueString = values[0].ToString(CultureInfo.InvariantCulture);
                                 break;
@@ -655,11 +653,11 @@ namespace HeicFileTypePlus.Exif
                     {
                         switch (type)
                         {
-                            case TagDataType.SShort:
+                            case ExifValueType.SShort:
                                 valueString = ((short)values[0]).ToString(CultureInfo.InvariantCulture) + "," +
                                               ((short)values[1]).ToString(CultureInfo.InvariantCulture);
                                 break;
-                            case TagDataType.Short:
+                            case ExifValueType.Short:
                             default:
                                 valueString = values[0].ToString(CultureInfo.InvariantCulture) + "," +
                                               values[1].ToString(CultureInfo.InvariantCulture);
@@ -678,13 +676,13 @@ namespace HeicFileTypePlus.Exif
 
         private readonly struct MetadataOffset
         {
-            public MetadataOffset(MetadataSection section, uint offset)
+            public MetadataOffset(ExifSection section, uint offset)
             {
                 this.Section = section;
                 this.Offset = offset;
             }
 
-            public MetadataSection Section { get; }
+            public ExifSection Section { get; }
 
             public uint Offset { get; }
         }

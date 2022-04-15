@@ -16,46 +16,35 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+using PaintDotNet.Imaging;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 
 namespace HeicFileTypePlus.Exif
 {
     [DebuggerDisplay("Count = {Count}")]
     [DebuggerTypeProxy(typeof(ExifValueCollectionDebugView))]
     internal sealed class ExifValueCollection
-        : IEnumerable<MetadataEntry>
+        : IEnumerable<KeyValuePair<ExifPropertyPath, ExifValue>>
     {
-        private readonly List<MetadataEntry> exifMetadata;
+        private readonly Dictionary<ExifPropertyPath, ExifValue> exifMetadata;
 
-        public ExifValueCollection(List<MetadataEntry> items)
+        public ExifValueCollection(Dictionary<ExifPropertyPath, ExifValue> items)
         {
             this.exifMetadata = items ?? throw new ArgumentNullException(nameof(items));
         }
 
         public int Count => this.exifMetadata.Count;
 
-        public void Remove(MetadataKey key)
-        {
-            MetadataEntry value = this.exifMetadata.Find(p => p.Section == key.Section && p.TagId == key.TagId);
+        public void Remove(ExifPropertyPath key) => this.exifMetadata.Remove(key);
 
-            if (value != null)
-            {
-                this.exifMetadata.RemoveAll(p => p.Section == key.Section && p.TagId == key.TagId);
-            }
-        }
+        public IEnumerator<KeyValuePair<ExifPropertyPath, ExifValue>> GetEnumerator()
+            => this.exifMetadata.GetEnumerator();
 
-        public IEnumerator<MetadataEntry> GetEnumerator()
-        {
-            return this.exifMetadata.GetEnumerator();
-        }
-
-        IEnumerator IEnumerable.GetEnumerator()
-        {
-            return this.exifMetadata.GetEnumerator();
-        }
+        IEnumerator IEnumerable.GetEnumerator() => this.exifMetadata.GetEnumerator();
 
         private sealed class ExifValueCollectionDebugView
         {
@@ -67,7 +56,7 @@ namespace HeicFileTypePlus.Exif
             }
 
             [DebuggerBrowsable(DebuggerBrowsableState.RootHidden)]
-            public MetadataEntry[] Items
+            public KeyValuePair<ExifPropertyPath, ExifValue>[] Items
             {
                 get
                 {

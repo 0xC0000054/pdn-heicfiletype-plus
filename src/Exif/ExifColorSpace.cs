@@ -21,6 +21,7 @@ namespace HeicFileTypePlus.Exif
     internal enum ExifColorSpace : ushort
     {
         Srgb = 1,
-        Uncalibrated = 65535
+        AdobeRgb = 2,
+        Uncalibrated  = 65535
     }
 }

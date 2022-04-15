@@ -16,6 +16,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+using PaintDotNet.Imaging;
 using System;
 
 namespace HeicFileTypePlus.Exif
@@ -28,12 +29,12 @@ namespace HeicFileTypePlus.Exif
         public IFDEntry(EndianBinaryReader reader)
         {
             this.Tag = reader.ReadUInt16();
-            this.Type = (TagDataType)reader.ReadUInt16();
+            this.Type = (ExifValueType)reader.ReadInt16();
             this.Count = reader.ReadUInt32();
             this.Offset = reader.ReadUInt32();
         }
 
-        public IFDEntry(ushort tag, TagDataType type, uint count, uint offset)
+        public IFDEntry(ushort tag, ExifValueType type, uint count, uint offset)
         {
             this.Tag = tag;
             this.Type = type;
@@ -43,7 +44,7 @@ namespace HeicFileTypePlus.Exif
 
         public ushort Tag { get; }
 
-        public TagDataType Type { get; }
+        public ExifValueType Type { get; }
 
         public uint Count { get; }
 
