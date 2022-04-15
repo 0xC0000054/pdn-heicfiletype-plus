@@ -62,7 +62,8 @@ namespace HeicFileTypePlus
             {
                 ReadOnlySpan<byte> bytes = data.Slice(0, Gif87aFileSignature.Length);
 
-                result = bytes.SequenceEqual(Gif87aFileSignature) || bytes.SequenceEqual(Gif89aFileSignature);
+                result = bytes.SequenceEqual(Gif87aFileSignature)
+                      || bytes.SequenceEqual(Gif89aFileSignature);
             }
 
             return result;
@@ -76,7 +77,8 @@ namespace HeicFileTypePlus
             {
                 ReadOnlySpan<byte> bytes = data.Slice(0, TiffBigEndianFileSignature.Length);
 
-                result = bytes.SequenceEqual(TiffBigEndianFileSignature) || bytes.SequenceEqual(TiffLittleEndianFileSignature);
+                result = bytes.SequenceEqual(TiffBigEndianFileSignature)
+                      || bytes.SequenceEqual(TiffLittleEndianFileSignature);
             }
 
             return result;
