@@ -27,6 +27,7 @@ namespace HeicFileTypePlus
         PSNR = 0,
         SSIM,
         FilmGrain,
-        FastDecode
+        FastDecode,
+        None
     }
 }

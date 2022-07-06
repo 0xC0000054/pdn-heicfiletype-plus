@@ -69,7 +69,7 @@ namespace HeicFileTypePlus
                 new Int32Property(PropertyNames.Quality, 90, 0, 100, false),
                 CreateChromaSubsampling(),
                 StaticListChoiceProperty.CreateForEnum(PropertyNames.Preset, EncoderPreset.Medium),
-                StaticListChoiceProperty.CreateForEnum(PropertyNames.Tuning, EncoderTuning.SSIM),
+                CreateTuning(),
                 new Int32Property(PropertyNames.TUIntraDepth, 1, 1, 4, false),
                 new UriProperty(PropertyNames.ForumLink, new Uri("https://forums.getpaint.net/topic/116873-heic-filetype-plus/")),
                 new UriProperty(PropertyNames.GitHubLink, new Uri("https://github.com/0xC0000054/pdn-heicfiletype-plus"))
@@ -92,6 +92,24 @@ namespace HeicFileTypePlus
                 int defaultChoiceIndex = Array.IndexOf(valueChoices, YUVChromaSubsampling.Subsampling422);
 
                 return new StaticListChoiceProperty(PropertyNames.YUVChromaSubsampling, valueChoices, defaultChoiceIndex);
+            }
+
+            static StaticListChoiceProperty CreateTuning()
+            {
+                // The list is created manually so that the None value appears first. 
+
+                object[] valueChoices = new object[]
+                {
+                    EncoderTuning.None,
+                    EncoderTuning.PSNR,
+                    EncoderTuning.SSIM,
+                    EncoderTuning.FilmGrain,
+                    EncoderTuning.FastDecode,
+                };
+
+                int defaultChoiceIndex = 0;
+
+                return new StaticListChoiceProperty(PropertyNames.Tuning, valueChoices, defaultChoiceIndex);
             }
         }
 
@@ -124,6 +142,7 @@ namespace HeicFileTypePlus
 
             PropertyControlInfo tuningInfo = configUI.FindControlForPropertyName(PropertyNames.Tuning);
             tuningInfo.ControlProperties[ControlInfoPropertyNames.DisplayName].Value = "Tuning";
+            tuningInfo.SetValueDisplayName(EncoderTuning.None, "None");
             tuningInfo.SetValueDisplayName(EncoderTuning.PSNR, "PSNR");
             tuningInfo.SetValueDisplayName(EncoderTuning.SSIM, "SSIM");
             tuningInfo.SetValueDisplayName(EncoderTuning.FilmGrain, "Film Grain");

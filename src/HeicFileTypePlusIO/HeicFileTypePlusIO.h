@@ -133,7 +133,8 @@ enum class EncoderTuning
     PSNR = 0,
     SSIM,
     FilmGrain,
-    FastDecode
+    FastDecode,
+    None
 };
 
 struct EncoderOptions

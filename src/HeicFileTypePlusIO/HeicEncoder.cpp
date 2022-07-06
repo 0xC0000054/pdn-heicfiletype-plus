@@ -190,7 +190,10 @@ namespace
 
                 if (status == Status::Ok)
                 {
-                    status = SetEncoderParameter(encoder, "tune", GetTuningString(options->tuning));
+                    if (options->tuning != EncoderTuning::None)
+                    {
+                        status = SetEncoderParameter(encoder, "tune", GetTuningString(options->tuning));
+                    }
 
                     if (status == Status::Ok)
                     {
