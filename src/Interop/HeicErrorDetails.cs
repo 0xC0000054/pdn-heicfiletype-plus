@@ -17,9 +17,11 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 using System;
+using System.Runtime.InteropServices;
 
 namespace HeicFileTypePlus.Interop
 {
+    [UnmanagedFunctionPointer(CallingConvention.StdCall)]
     internal unsafe delegate void HeicErrorDetailsCopy(sbyte* messsage);
 
     internal sealed class HeicErrorDetails
