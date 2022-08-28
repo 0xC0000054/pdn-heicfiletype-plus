@@ -29,7 +29,7 @@ namespace HeicFileTypePlus.Interop
 
     internal sealed class SafeHeifContextX64 : SafeHeifContext
     {
-        private SafeHeifContextX64() : base(true)
+        public SafeHeifContextX64() : base(true)
         {
         }
 
@@ -41,7 +41,7 @@ namespace HeicFileTypePlus.Interop
 
     internal sealed class SafeHeifContextX86 : SafeHeifContext
     {
-        private SafeHeifContextX86() : base(true)
+        public SafeHeifContextX86() : base(true)
         {
         }
 
@@ -53,7 +53,7 @@ namespace HeicFileTypePlus.Interop
 
     internal sealed class SafeHeifContextARM64 : SafeHeifContext
     {
-        private SafeHeifContextARM64() : base(true)
+        public SafeHeifContextARM64() : base(true)
         {
         }
 
