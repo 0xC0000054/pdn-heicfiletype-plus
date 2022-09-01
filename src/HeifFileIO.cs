@@ -116,9 +116,9 @@ namespace HeicFileTypePlus
             base.Dispose(disposing);
         }
 
-        private int Read(IntPtr buffer, UIntPtr numberOfBytesToRead)
+        private int Read(IntPtr buffer, nuint numberOfBytesToRead)
         {
-            ulong count = numberOfBytesToRead.ToUInt64();
+            nuint count = numberOfBytesToRead;
 
             if (count == 0)
             {
@@ -155,9 +155,9 @@ namespace HeicFileTypePlus
             }
         }
 
-        private int Write(IntPtr buffer, UIntPtr numberOfBytesToWrite)
+        private int Write(IntPtr buffer, nuint numberOfBytesToWrite)
         {
-            ulong count = numberOfBytesToWrite.ToUInt64();
+            nuint count = numberOfBytesToWrite;
 
             if (count == 0)
             {

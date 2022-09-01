@@ -52,19 +52,19 @@ namespace HeicFileTypePlus.Interop
         internal static extern Status DecodeImage(SafeHeifImageHandle imageHandle, [In] ref BitmapData bitmapData);
 
         [DllImport(DllName, CallingConvention = CallingConvention.StdCall)]
-        internal static extern Status GetICCProfileSize(SafeHeifImageHandle imageHandle, out UIntPtr size);
+        internal static extern Status GetICCProfileSize(SafeHeifImageHandle imageHandle, out nuint size);
 
         [DllImport(DllName, CallingConvention = CallingConvention.StdCall)]
-        internal static extern Status GetICCProfile(SafeHeifImageHandle imageHandle, byte[] buffer, UIntPtr bufferSize);
+        internal static extern Status GetICCProfile(SafeHeifImageHandle imageHandle, byte[] buffer, nuint bufferSize);
 
         [DllImport(DllName, CallingConvention = CallingConvention.StdCall)]
         internal static extern Status GetCICPColorData(SafeHeifImageHandle imageHandle, out CICPColorData colorData);
 
         [DllImport(DllName, CallingConvention = CallingConvention.StdCall)]
-        internal static extern Status GetMetadataSize(SafeHeifImageHandle imageHandle, MetadataType metadataType, out UIntPtr size);
+        internal static extern Status GetMetadataSize(SafeHeifImageHandle imageHandle, MetadataType metadataType, out nuint size);
 
         [DllImport(DllName, CallingConvention = CallingConvention.StdCall)]
-        internal static extern Status GetMetadata(SafeHeifImageHandle imageHandle, MetadataType metadataType, byte[] buffer, UIntPtr bufferSize);
+        internal static extern Status GetMetadata(SafeHeifImageHandle imageHandle, MetadataType metadataType, byte[] buffer, nuint bufferSize);
 
         [DllImport(DllName, CallingConvention = CallingConvention.StdCall)]
         internal static extern Status SaveToFile([In] ref BitmapData bitmapData,

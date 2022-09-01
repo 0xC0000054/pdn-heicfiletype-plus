@@ -201,9 +201,9 @@ namespace HeicFileTypePlus
             }
         }
 
-        internal static ulong GetICCProfileSize(SafeHeifImageHandle imageHandle)
+        internal static nuint GetICCProfileSize(SafeHeifImageHandle imageHandle)
         {
-            UIntPtr size;
+            nuint size;
             Status status;
 
             if (RuntimeInformation.ProcessArchitecture == Architecture.X64)
@@ -228,7 +228,7 @@ namespace HeicFileTypePlus
                 HandleReadError(status);
             }
 
-            return size.ToUInt64();
+            return size;
         }
 
         internal static void GetICCProfile(SafeHeifImageHandle imageHandle, byte[] buffer)
@@ -237,15 +237,15 @@ namespace HeicFileTypePlus
 
             if (RuntimeInformation.ProcessArchitecture == Architecture.X64)
             {
-                status = HeicIO_x64.GetICCProfile(imageHandle, buffer, new UIntPtr((uint)buffer.Length));
+                status = HeicIO_x64.GetICCProfile(imageHandle, buffer, (uint)buffer.Length);
             }
             else if (RuntimeInformation.ProcessArchitecture == Architecture.X86)
             {
-                status = HeicIO_x86.GetICCProfile(imageHandle, buffer, new UIntPtr((uint)buffer.Length));
+                status = HeicIO_x86.GetICCProfile(imageHandle, buffer, (uint)buffer.Length);
             }
             else if (RuntimeInformation.ProcessArchitecture == Architecture.Arm64)
             {
-                status = HeicIO_ARM64.GetICCProfile(imageHandle, buffer, new UIntPtr((uint)buffer.Length));
+                status = HeicIO_ARM64.GetICCProfile(imageHandle, buffer, (uint)buffer.Length);
             }
             else
             {
@@ -285,9 +285,9 @@ namespace HeicFileTypePlus
             }
         }
 
-        internal static ulong GetMetadataSize(SafeHeifImageHandle imageHandle, MetadataType metadataType)
+        internal static nuint GetMetadataSize(SafeHeifImageHandle imageHandle, MetadataType metadataType)
         {
-            UIntPtr size;
+            nuint size;
             Status status;
 
             if (RuntimeInformation.ProcessArchitecture == Architecture.X64)
@@ -312,7 +312,7 @@ namespace HeicFileTypePlus
                 HandleReadError(status);
             }
 
-            return size.ToUInt64();
+            return size;
         }
 
         internal static void GetMetadata(SafeHeifImageHandle imageHandle, MetadataType metadataType, byte[] buffer)
@@ -321,15 +321,15 @@ namespace HeicFileTypePlus
 
             if (RuntimeInformation.ProcessArchitecture == Architecture.X64)
             {
-                status = HeicIO_x64.GetMetadata(imageHandle, metadataType, buffer, new UIntPtr((uint)buffer.Length));
+                status = HeicIO_x64.GetMetadata(imageHandle, metadataType, buffer, (uint)buffer.Length);
             }
             else if (RuntimeInformation.ProcessArchitecture == Architecture.X86)
             {
-                status = HeicIO_x86.GetMetadata(imageHandle, metadataType, buffer, new UIntPtr((uint)buffer.Length));
+                status = HeicIO_x86.GetMetadata(imageHandle, metadataType, buffer, (uint)buffer.Length);
             }
             else if (RuntimeInformation.ProcessArchitecture == Architecture.Arm64)
             {
-                status = HeicIO_ARM64.GetMetadata(imageHandle, metadataType, buffer, new UIntPtr((uint)buffer.Length));
+                status = HeicIO_ARM64.GetMetadata(imageHandle, metadataType, buffer, (uint)buffer.Length);
             }
             else
             {

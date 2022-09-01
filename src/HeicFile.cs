@@ -216,7 +216,7 @@ namespace HeicFileTypePlus
                 }
             }
 
-            ulong iccProfileSize = HeicNative.GetICCProfileSize(primaryImageHandle);
+            nuint iccProfileSize = HeicNative.GetICCProfileSize(primaryImageHandle);
 
             if (iccProfileSize > 0 && iccProfileSize <= int.MaxValue)
             {
@@ -332,7 +332,7 @@ namespace HeicFileTypePlus
         {
             byte[] data = null;
 
-            ulong size = HeicNative.GetMetadataSize(primaryImageHandle, metadataType);
+            nuint size = HeicNative.GetMetadataSize(primaryImageHandle, metadataType);
 
             if (size > 0 && size <= int.MaxValue)
             {

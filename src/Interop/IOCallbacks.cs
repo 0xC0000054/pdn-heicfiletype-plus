@@ -22,10 +22,10 @@ using System.Runtime.InteropServices;
 namespace HeicFileTypePlus.Interop
 {
     [UnmanagedFunctionPointer(CallingConvention.StdCall)]
-    internal delegate int HeicIOCallbackRead(IntPtr buffer, UIntPtr count);
+    internal delegate int HeicIOCallbackRead(IntPtr buffer, nuint count);
 
     [UnmanagedFunctionPointer(CallingConvention.StdCall)]
-    internal delegate int HeicIOCallbackWrite(IntPtr buffer, UIntPtr count);
+    internal delegate int HeicIOCallbackWrite(IntPtr buffer, nuint count);
 
     [UnmanagedFunctionPointer(CallingConvention.StdCall)]
     internal delegate int HeicIOCallbackSeek(long position);
