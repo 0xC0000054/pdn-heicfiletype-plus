@@ -116,35 +116,29 @@ namespace HeicFileTypePlus
             base.Dispose(disposing);
         }
 
-        private int Read(IntPtr buffer, nuint numberOfBytesToRead)
+        private unsafe int Read(IntPtr buffer, nuint count)
         {
-            nuint count = numberOfBytesToRead;
-
-            if (count == 0)
-            {
-                return Success;
-            }
-
             try
             {
-                long totalBytesRead = 0;
-                long remaining = checked((long)count);
+                nuint totalBytesRead = 0;
 
-                do
+                while (totalBytesRead < count)
                 {
-                    int streamBytesRead = this.stream.Read(this.streamBuffer, 0, (int)Math.Min(MaxBufferSize, remaining));
+                    int streamBytesRead = this.stream.Read(this.streamBuffer,
+                                                           0,
+                                                           (int)Math.Min(MaxBufferSize, count - totalBytesRead));
 
                     if (streamBytesRead == 0)
                     {
                         throw new EndOfStreamException();
                     }
 
-                    Marshal.Copy(this.streamBuffer, 0, new IntPtr(buffer.ToInt64() + totalBytesRead), streamBytesRead);
+                    ReadOnlySpan<byte> source = new(this.streamBuffer, 0, streamBytesRead);
 
-                    totalBytesRead += streamBytesRead;
-                    remaining -= streamBytesRead;
+                    source.CopyTo(new Span<byte>((byte*)buffer + totalBytesRead, streamBytesRead));
 
-                } while (remaining > 0);
+                    totalBytesRead += (nuint)streamBytesRead;
+                }
 
                 return Success;
             }
@@ -155,32 +149,22 @@ namespace HeicFileTypePlus
             }
         }
 
-        private int Write(IntPtr buffer, nuint numberOfBytesToWrite)
+        private unsafe int Write(IntPtr buffer, nuint count)
         {
-            nuint count = numberOfBytesToWrite;
-
-            if (count == 0)
-            {
-                return Success;
-            }
-
             try
             {
-                long offset = 0;
-                long remaining = checked((long)count);
+                nuint offset = 0;
 
-                do
+                while (offset < count)
                 {
-                    int copySize = (int)Math.Min(MaxBufferSize, remaining);
+                    int copySize = (int)Math.Min(MaxBufferSize, count - offset);
 
-                    Marshal.Copy(new IntPtr(buffer.ToInt64() + offset), this.streamBuffer, 0, copySize);
+                    new ReadOnlySpan<byte>((byte*)buffer + offset, copySize).CopyTo(this.streamBuffer);
 
                     this.stream.Write(this.streamBuffer, 0, copySize);
 
-                    offset += copySize;
-                    remaining -= copySize;
-
-                } while (remaining > 0);
+                    offset += (nuint)copySize;
+                }
 
                 return Success;
             }
