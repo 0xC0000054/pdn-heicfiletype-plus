@@ -136,7 +136,7 @@ namespace HeicFileTypePlus
 
                     if (streamBytesRead == 0)
                     {
-                        break;
+                        throw new EndOfStreamException();
                     }
 
                     Marshal.Copy(this.streamBuffer, 0, new IntPtr(buffer.ToInt64() + totalBytesRead), streamBytesRead);
