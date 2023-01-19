@@ -41,4 +41,4 @@ This project uses the following libraries. (the required header and library file
 
 * [libheif](https://github.com/strukturag/libheif)
 * [libde265](https://github.com/strukturag/libde265)
-* [x265](https://bitbucket.org/multicoreware/x265)
+* [x265](https://bitbucket.org/multicoreware/x265_git)
