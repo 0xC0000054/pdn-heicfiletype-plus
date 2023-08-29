@@ -12,9 +12,14 @@ A [Paint.NET](http://www.getpaint.net) filetype plugin that allows HEIC images t
   Classic | C:\Program Files\Paint.NET\FileTypes    
   Microsoft Store | Documents\paint.net App Files\FileTypes
 
-3. Open the Windows Run dialog (Start > Run or `Windows Key` + `R`)
-4. Type `paintdotnet:/set:FileTypes/BuiltInHEICFileTypeEnabled=false` and press the `Enter` key
-5. Restart Paint.NET.
+3. Disable the built-in Paint.NET HEIC support
+  * Classic / Microsoft Store
+    1. Open the Windows Run dialog (Start > Run or `Windows Key` + `R`)
+	2. Type `paintdotnet:/set:FileTypes/BuiltInHEICFileTypeEnabled=false` and press the `Enter` key
+  * Portable
+    1. Open a command prompt in the folder that Paint.NET is located in.
+    2. Type `paintdotnet.exe /set:FileTypes/BuiltInHEICFileTypeEnabled=false` and press the `Enter` key
+4. Restart Paint.NET.
 
 ## License
 
