@@ -224,7 +224,7 @@ namespace HeicFileTypePlus
                 HeicNative.GetICCProfile(primaryImageHandle, iccProfile);
 
                 document.Metadata.AddExifPropertyItem(ExifSection.Image,
-                                                      unchecked((ushort)ExifTagID.IccProfileData),
+                                                      ExifPropertyKeys.Image.InterColorProfile.Path.TagID,
                                                       new ExifValue(ExifValueType.Undefined, iccProfile));
             }
 

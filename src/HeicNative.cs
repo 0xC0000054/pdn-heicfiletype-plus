@@ -50,7 +50,7 @@ namespace HeicFileTypePlus
 
             if (context is null || context.IsInvalid)
             {
-                ExceptionUtil.ThrowInvalidOperationException("Unable to create the HEIC file context.");
+                throw new InvalidOperationException("Unable to create the HEIC file context.");
             }
 
             return context;

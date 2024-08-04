@@ -16,7 +16,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-using PaintDotNet;
+using System;
 using System.Collections.Generic;
 
 namespace HeicFileTypePlus.Exif
@@ -25,10 +25,7 @@ namespace HeicFileTypePlus.Exif
     {
         internal static T[] AsArrayOrToArray<T>(this IReadOnlyList<T> items)
         {
-            if (items is null)
-            {
-                ExceptionUtil.ThrowArgumentNullException(nameof(items));
-            }
+            ArgumentNullException.ThrowIfNull(items, nameof(items));
 
             T[] asArray = items as T[];
 

@@ -16,7 +16,6 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-using PaintDotNet.IO;
 using System;
 using System.IO;
 
@@ -42,8 +41,7 @@ namespace HeicFileTypePlus
         {
             Span<byte> bytes = stackalloc byte[8];
 
-            int bytesRead = stream.ProperRead(bytes);
-            bytes = bytes.Slice(0, bytesRead);
+            stream.ReadExactly(bytes);
 
             return FileSignatureMatches(bytes, JpegFileSignature)
                 || FileSignatureMatches(bytes, PngFileSignature)

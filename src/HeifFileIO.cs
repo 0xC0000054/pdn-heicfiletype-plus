@@ -44,10 +44,7 @@ namespace HeicFileTypePlus
 
         public HeifFileIO(Stream stream, bool leaveOpen)
         {
-            if (stream is null)
-            {
-                ExceptionUtil.ThrowArgumentNullException(nameof(stream));
-            }
+            ArgumentNullException.ThrowIfNull(stream, nameof(stream));
 
             this.stream = stream;
             this.leaveOpen = leaveOpen;
@@ -78,10 +75,7 @@ namespace HeicFileTypePlus
         {
             get
             {
-                if (this.IsDisposed)
-                {
-                    ExceptionUtil.ThrowObjectDisposedException(nameof(HeifFileIO));
-                }
+                ObjectDisposedException.ThrowIf(this.IsDisposed, this);
 
                 return this.ioCallbacksHandle;
             }
