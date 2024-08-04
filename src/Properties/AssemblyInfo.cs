@@ -1,7 +1,7 @@
 ﻿// This file is part of pdn-heicfiletype-plus, a libheif-based HEIC
 // FileType plugin for Paint.NET.
 //
-// Copyright (C) 2020, 2021, 2022 Nicholas Hayes
+// Copyright (C) 2020, 2021, 2022, 2024 Nicholas Hayes
 //
 // pdn-heicfiletype-plus is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -28,7 +28,7 @@ using System.Runtime.Versioning;
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("null54")]
 [assembly: AssemblyProduct("HeicFileTypePlus")]
-[assembly: AssemblyCopyright("Copyright © 2022 Nicholas Hayes (aka null54)")]
+[assembly: AssemblyCopyright("Copyright © 2024 Nicholas Hayes (aka null54)")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
