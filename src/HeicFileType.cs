@@ -40,8 +40,8 @@ namespace HeicFileTypePlus
                 "HEIC",
                 new FileTypeOptions
                 {
-                    LoadExtensions = new string[] { ".heic" },
-                    SaveExtensions = new string[] { ".heic" },
+                    LoadExtensions = new string[] { ".heic", ".heif", ".hif" },
+                    SaveExtensions = new string[] { ".heic", ".heif", ".hif" },
                     SupportsCancellation = true,
                     SupportsLayers = false
                 })
@@ -96,7 +96,7 @@ namespace HeicFileTypePlus
 
             static StaticListChoiceProperty CreateTuning()
             {
-                // The list is created manually so that the None value appears first. 
+                // The list is created manually so that the None value appears first.
 
                 object[] valueChoices = new object[]
                 {
