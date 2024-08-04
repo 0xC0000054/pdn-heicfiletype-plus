@@ -1,0 +1,12 @@
+{
+  "name": "pdn-heicfiletype-plus",
+  "version": "1.0.0",
+  "description": "A Paint.NET filetype plugin that allows HEIC images to be loaded and saved with transparency.",
+  "homepage": "https://github.com/0xC0000054/pdn-heicfiletype-plus",
+  "dependencies": [
+    "libde265",
+    "libheif",
+    "x265"
+  ],
+  "builtin-baseline": "513aa7ceb3b5e9bf90882cb7edc06c9d5efcf0ee"
+}
