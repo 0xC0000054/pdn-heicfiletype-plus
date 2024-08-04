@@ -49,13 +49,13 @@ namespace HeicFileTypePlus
                 if (!string.IsNullOrEmpty(libde265Version))
                 {
                     data += "\n";
-                    data += libde265Version; 
+                    data += libde265Version;
                 }
 
                 if (!string.IsNullOrEmpty(x265Version))
                 {
                     data += "\n";
-                    data += x265Version; 
+                    data += x265Version;
                 }
             }
 
