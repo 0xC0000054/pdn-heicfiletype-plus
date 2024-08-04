@@ -35,10 +35,6 @@ namespace HeicFileTypePlus
             {
                 context = HeicIO_x64.CreateContext();
             }
-            else if (RuntimeInformation.ProcessArchitecture == Architecture.X86)
-            {
-                context = HeicIO_x86.CreateContext();
-            }
             else if (RuntimeInformation.ProcessArchitecture == Architecture.Arm64)
             {
                 context = HeicIO_ARM64.CreateContext();
@@ -66,12 +62,6 @@ namespace HeicFileTypePlus
             if (RuntimeInformation.ProcessArchitecture == Architecture.X64)
             {
                 status = HeicIO_x64.LoadFileIntoContext(context,
-                                                        fileIO.IOCallbacksHandle,
-                                                        copyErrorDetailsCallback);
-            }
-            else if (RuntimeInformation.ProcessArchitecture == Architecture.X86)
-            {
-                status = HeicIO_x86.LoadFileIntoContext(context,
                                                         fileIO.IOCallbacksHandle,
                                                         copyErrorDetailsCallback);
             }
@@ -127,22 +117,6 @@ namespace HeicFileTypePlus
                     HandleReadError(status, errorDetails.Message);
                 }
             }
-            else if (RuntimeInformation.ProcessArchitecture == Architecture.X86)
-            {
-                Status status = HeicIO_x86.GetPrimaryImage(context,
-                                                           out SafeHeifImageHandleX86 handle,
-                                                           info,
-                                                           copyErrorDetailsCallback);
-
-                if (status == Status.Ok)
-                {
-                    primaryImageHandle = handle;
-                }
-                else
-                {
-                    HandleReadError(status, errorDetails.Message);
-                }
-            }
             else if (RuntimeInformation.ProcessArchitecture == Architecture.Arm64)
             {
                 Status status = HeicIO_ARM64.GetPrimaryImage(context,
@@ -182,10 +156,6 @@ namespace HeicFileTypePlus
             {
                 status = HeicIO_x64.DecodeImage(imageHandle, ref bitmapData);
             }
-            else if (RuntimeInformation.ProcessArchitecture == Architecture.X86)
-            {
-                status = HeicIO_x86.DecodeImage(imageHandle, ref bitmapData);
-            }
             else if (RuntimeInformation.ProcessArchitecture == Architecture.Arm64)
             {
                 status = HeicIO_ARM64.DecodeImage(imageHandle, ref bitmapData);
@@ -209,10 +179,6 @@ namespace HeicFileTypePlus
             if (RuntimeInformation.ProcessArchitecture == Architecture.X64)
             {
                 status = HeicIO_x64.GetICCProfileSize(imageHandle, out size);
-            }
-            else if (RuntimeInformation.ProcessArchitecture == Architecture.X86)
-            {
-                status = HeicIO_x86.GetICCProfileSize(imageHandle, out size);
             }
             else if (RuntimeInformation.ProcessArchitecture == Architecture.Arm64)
             {
@@ -239,10 +205,6 @@ namespace HeicFileTypePlus
             {
                 status = HeicIO_x64.GetICCProfile(imageHandle, buffer, (uint)buffer.Length);
             }
-            else if (RuntimeInformation.ProcessArchitecture == Architecture.X86)
-            {
-                status = HeicIO_x86.GetICCProfile(imageHandle, buffer, (uint)buffer.Length);
-            }
             else if (RuntimeInformation.ProcessArchitecture == Architecture.Arm64)
             {
                 status = HeicIO_ARM64.GetICCProfile(imageHandle, buffer, (uint)buffer.Length);
@@ -265,10 +227,6 @@ namespace HeicFileTypePlus
             if (RuntimeInformation.ProcessArchitecture == Architecture.X64)
             {
                 status = HeicIO_x64.GetCICPColorData(imageHandle, out colorData);
-            }
-            else if (RuntimeInformation.ProcessArchitecture == Architecture.X86)
-            {
-                status = HeicIO_x86.GetCICPColorData(imageHandle, out colorData);
             }
             else if (RuntimeInformation.ProcessArchitecture == Architecture.Arm64)
             {
@@ -294,10 +252,6 @@ namespace HeicFileTypePlus
             {
                 status = HeicIO_x64.GetMetadataSize(imageHandle, metadataType, out size);
             }
-            else if (RuntimeInformation.ProcessArchitecture == Architecture.X86)
-            {
-                status = HeicIO_x86.GetMetadataSize(imageHandle, metadataType, out size);
-            }
             else if (RuntimeInformation.ProcessArchitecture == Architecture.Arm64)
             {
                 status = HeicIO_ARM64.GetMetadataSize(imageHandle, metadataType, out size);
@@ -322,10 +276,6 @@ namespace HeicFileTypePlus
             if (RuntimeInformation.ProcessArchitecture == Architecture.X64)
             {
                 status = HeicIO_x64.GetMetadata(imageHandle, metadataType, buffer, (uint)buffer.Length);
-            }
-            else if (RuntimeInformation.ProcessArchitecture == Architecture.X86)
-            {
-                status = HeicIO_x86.GetMetadata(imageHandle, metadataType, buffer, (uint)buffer.Length);
             }
             else if (RuntimeInformation.ProcessArchitecture == Architecture.Arm64)
             {
@@ -362,10 +312,6 @@ namespace HeicFileTypePlus
             if (RuntimeInformation.ProcessArchitecture == Architecture.X64)
             {
                 status = HeicIO_x64.SaveToFile(ref bitmapData, options, metadata, ref colorData, fileIO.IOCallbacksHandle, progressCallback);
-            }
-            else if (RuntimeInformation.ProcessArchitecture == Architecture.X86)
-            {
-                status = HeicIO_x86.SaveToFile(ref bitmapData, options, metadata, ref colorData, fileIO.IOCallbacksHandle, progressCallback);
             }
             else if (RuntimeInformation.ProcessArchitecture == Architecture.Arm64)
             {

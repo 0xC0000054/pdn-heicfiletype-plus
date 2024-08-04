@@ -39,18 +39,6 @@ namespace HeicFileTypePlus.Interop
         }
     }
 
-    internal sealed class SafeHeifImageHandleX86 : SafeHeifImageHandle
-    {
-        public SafeHeifImageHandleX86() : base(true)
-        {
-        }
-
-        protected override bool ReleaseHandle()
-        {
-            return HeicIO_x86.DeleteImageHandle(this.handle);
-        }
-    }
-
     internal sealed class SafeHeifImageHandleARM64 : SafeHeifImageHandle
     {
         public SafeHeifImageHandleARM64() : base(true)
