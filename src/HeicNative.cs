@@ -335,6 +335,62 @@ namespace HeicFileTypePlus
             }
         }
 
+        internal static unsafe nuint GetLibDe265VersionString(byte* buffer, nuint length)
+        {
+            nuint result;
+            if (RuntimeInformation.ProcessArchitecture == Architecture.X64)
+            {
+                result = HeicIO_x64.GetLibDe265VersionString(buffer, length);
+            }
+            else if (RuntimeInformation.ProcessArchitecture == Architecture.Arm64)
+            {
+                result = HeicIO_ARM64.GetLibDe265VersionString(buffer, length);
+            }
+            else
+            {
+                throw new PlatformNotSupportedException();
+            }
+
+            return result;
+        }
+
+        internal static unsafe nuint GetLiHeifVersionString(byte* buffer, nuint length)
+        {
+            nuint result;
+            if (RuntimeInformation.ProcessArchitecture == Architecture.X64)
+            {
+                result = HeicIO_x64.GetLibHeifVersionString(buffer, length);
+            }
+            else if (RuntimeInformation.ProcessArchitecture == Architecture.Arm64)
+            {
+                result = HeicIO_ARM64.GetLibHeifVersionString(buffer, length);
+            }
+            else
+            {
+                throw new PlatformNotSupportedException();
+            }
+
+            return result;
+        }
+        internal static unsafe nuint GetX265VersionString(byte* buffer, nuint length)
+        {
+            nuint result;
+            if (RuntimeInformation.ProcessArchitecture == Architecture.X64)
+            {
+                result = HeicIO_x64.GetX265VersionString(buffer, length);
+            }
+            else if (RuntimeInformation.ProcessArchitecture == Architecture.Arm64)
+            {
+                result = HeicIO_ARM64.GetX265VersionString(buffer, length);
+            }
+            else
+            {
+                throw new PlatformNotSupportedException();
+            }
+
+            return result;
+        }
+
         private static void HandleReadError(Status status, string errorDetails = null)
         {
             switch (status)

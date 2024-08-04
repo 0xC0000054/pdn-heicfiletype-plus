@@ -25,6 +25,7 @@
 #include "HeicMetadata.h"
 #include "HeicReader.h"
 #include "HeicWriter.h"
+#include <string>
 #include <vector>
 
 heif_context* __stdcall CreateContext()
@@ -308,6 +309,82 @@ Status __stdcall SaveToFile(
     {
         return Status::EncodeFailed;
     }
+}
+
+size_t __stdcall GetLibDe265VersionString(char* buffer, size_t length)
+{
+    size_t result = 0;
+
+    const heif_decoder_descriptor* libde265Descriptor[1];
+
+    if (heif_get_decoder_descriptors(heif_compression_HEVC, libde265Descriptor, 1) == 1)
+    {
+        const char* const name = heif_decoder_descriptor_get_name(*libde265Descriptor);
+
+        if (name)
+        {
+            const size_t stringLength = std::char_traits<char>::length(name);
+
+            if (buffer)
+            {
+                if (length >= stringLength)
+                {
+                    memcpy_s(buffer, length, name, stringLength);
+                    result = std::min(length, stringLength);
+                }
+            }
+            else
+            {
+                result = stringLength;
+            }
+        }
+    }
+
+    return result;
+}
+
+size_t __stdcall GetLibHeifVersionString(char* buffer, size_t length)
+{
+    constexpr size_t stringLength = std::char_traits<char>::length(LIBHEIF_VERSION);
+
+    if (buffer)
+    {
+        memcpy_s(buffer, length, LIBHEIF_VERSION, stringLength);
+    }
+
+    return stringLength;
+}
+
+size_t __stdcall GetX265VersionString(char* buffer, size_t length)
+{
+    size_t result = 0;
+
+    const heif_encoder_descriptor* x265Descriptor[1];
+
+    if (heif_get_encoder_descriptors(heif_compression_HEVC, nullptr, x265Descriptor, 1) == 1)
+    {
+        const char* const name = heif_encoder_descriptor_get_name(*x265Descriptor);
+
+        if (name)
+        {
+            const size_t stringLength = std::char_traits<char>::length(name);
+
+            if (buffer)
+            {
+                if (length >= stringLength)
+                {
+                    memcpy_s(buffer, length, name, stringLength);
+                    result = std::min(length, stringLength);
+                }
+            }
+            else
+            {
+                result = stringLength;
+            }
+        }
+    }
+
+    return result;
 }
 
 

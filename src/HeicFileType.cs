@@ -56,7 +56,9 @@ namespace HeicFileTypePlus
             TUIntraDepth,
             YUVChromaSubsampling,
             ForumLink,
-            GitHubLink
+            GitHubLink,
+            PluginVersion,
+            LibHeifVersion
         }
 
         /// <summary>
@@ -72,7 +74,9 @@ namespace HeicFileTypePlus
                 CreateTuning(),
                 new Int32Property(PropertyNames.TUIntraDepth, 1, 1, 4, false),
                 new UriProperty(PropertyNames.ForumLink, new Uri("https://forums.getpaint.net/topic/116873-heic-filetype-plus/")),
-                new UriProperty(PropertyNames.GitHubLink, new Uri("https://github.com/0xC0000054/pdn-heicfiletype-plus"))
+                new UriProperty(PropertyNames.GitHubLink, new Uri("https://github.com/0xC0000054/pdn-heicfiletype-plus")),
+                new StringProperty(PropertyNames.PluginVersion),
+                new StringProperty(PropertyNames.LibHeifVersion),
             };
 
             return new PropertyCollection(props);
@@ -157,6 +161,16 @@ namespace HeicFileTypePlus
             PropertyControlInfo githubLinkInfo = configUI.FindControlForPropertyName(PropertyNames.GitHubLink);
             githubLinkInfo.ControlProperties[ControlInfoPropertyNames.DisplayName].Value = string.Empty;
             githubLinkInfo.ControlProperties[ControlInfoPropertyNames.Description].Value = "GitHub"; // GitHub is a brand name that should not be localized.
+
+            PropertyControlInfo pluginVersionInfo = configUI.FindControlForPropertyName(PropertyNames.PluginVersion);
+            pluginVersionInfo.ControlType.Value = PropertyControlType.Label;
+            pluginVersionInfo.ControlProperties[ControlInfoPropertyNames.DisplayName].Value = string.Empty;
+            pluginVersionInfo.ControlProperties[ControlInfoPropertyNames.Description].Value = VersionInfo.PluginVersion;
+
+            PropertyControlInfo libheifVersionInfo = configUI.FindControlForPropertyName(PropertyNames.LibHeifVersion);
+            libheifVersionInfo.ControlType.Value = PropertyControlType.Label;
+            libheifVersionInfo.ControlProperties[ControlInfoPropertyNames.DisplayName].Value = string.Empty;
+            libheifVersionInfo.ControlProperties[ControlInfoPropertyNames.Description].Value = VersionInfo.LibHeifVersion;
 
             return configUI;
         }

@@ -73,5 +73,14 @@ namespace HeicFileTypePlus.Interop
                                                  [In] ref CICPColorData colorData,
                                                  SafeHandle callbacks,
                                                  [MarshalAs(UnmanagedType.FunctionPtr)] HeifProgressCallback progressCallback);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.StdCall)]
+        internal static extern unsafe nuint GetLibDe265VersionString(byte* buffer, nuint length);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.StdCall)]
+        internal static extern unsafe nuint GetLibHeifVersionString(byte* buffer, nuint length);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.StdCall)]
+        internal static extern unsafe nuint GetX265VersionString(byte* buffer, nuint length);
     }
 }

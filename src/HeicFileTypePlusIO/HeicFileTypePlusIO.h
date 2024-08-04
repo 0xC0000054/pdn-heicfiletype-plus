@@ -194,6 +194,12 @@ HEICFILETYPEPLUSIO_API Status __stdcall SaveToFile(
     IOCallbacks* callbacks,
     const ProgressProc progress);
 
+HEICFILETYPEPLUSIO_API size_t __stdcall GetLibDe265VersionString(char* buffer, size_t length);
+
+HEICFILETYPEPLUSIO_API size_t __stdcall GetLibHeifVersionString(char* buffer, size_t length);
+
+HEICFILETYPEPLUSIO_API size_t __stdcall GetX265VersionString(char* buffer, size_t length);
+
 
 #ifdef __cplusplus
 }
