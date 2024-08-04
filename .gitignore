@@ -298,4 +298,7 @@ __pycache__/
 
 *.diagsession
 
-vcpkg_installed/
+vendor/
+
+# Include the compiled lib files
+!/src/deps/libs/**/
