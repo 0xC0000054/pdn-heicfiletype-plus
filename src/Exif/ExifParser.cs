@@ -22,7 +22,10 @@ using System.Buffers.Binary;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
+using System.Runtime.CompilerServices;
 using System.Text;
+
+#nullable enable
 
 namespace HeicFileTypePlus.Exif
 {
@@ -36,14 +39,11 @@ namespace HeicFileTypePlus.Exif
         /// A collection containing the EXIF properties.
         /// </returns>
         /// <exception cref="ArgumentNullException"><paramref name="exifBytes"/> is null.</exception>
-        internal static ExifValueCollection Parse(Stream stream)
+        internal static ExifValueCollection? Parse(Stream stream)
         {
-            if (stream is null)
-            {
-                throw new ArgumentNullException(nameof(stream));
-            }
+            ArgumentNullException.ThrowIfNull(stream, nameof(stream));
 
-            ExifValueCollection exifValues = null;
+            ExifValueCollection? exifValues = null;
 
             try
             {
@@ -68,32 +68,25 @@ namespace HeicFileTypePlus.Exif
             }
             catch (EndOfStreamException)
             {
+                // The EXIF data is corrupt, ignore it.
+                exifValues = null;
             }
 
             return exifValues;
         }
 
+        [SkipLocalsInit]
         private static Endianess? TryDetectTiffByteOrder(Stream stream)
         {
-            int byte1 = stream.ReadByte();
-            if (byte1 == -1)
-            {
-                return null;
-            }
+            Span<byte> byteOrderMarker = stackalloc byte[2];
 
-            int byte2 = stream.ReadByte();
-            if (byte2 == -1)
-            {
-                return null;
-            }
+            stream.ReadExactly(byteOrderMarker);
 
-            ushort byteOrderMarker = (ushort)(byte1 | (byte2 << 8));
-
-            if (byteOrderMarker == TiffConstants.BigEndianByteOrderMarker)
+            if (byteOrderMarker.SequenceEqual(TiffConstants.BigEndianByteOrderMarker))
             {
                 return Endianess.Big;
             }
-            else if (byteOrderMarker == TiffConstants.LittleEndianByteOrderMarker)
+            else if (byteOrderMarker.SequenceEqual(TiffConstants.LittleEndianByteOrderMarker))
             {
                 return Endianess.Little;
             }
@@ -112,7 +105,7 @@ namespace HeicFileTypePlus.Exif
             {
                 ParserIFDEntry entry = entries[i];
 
-                byte[] propertyData;
+                byte[]? propertyData;
                 if (entry.OffsetFieldContainsValue)
                 {
                     propertyData = entry.GetValueBytesFromOffset();
@@ -336,10 +329,8 @@ namespace HeicFileTypePlus.Exif
 
         private readonly struct ParserIFDEntry
         {
-#pragma warning disable IDE0032 // Use auto property
             private readonly IFDEntry entry;
             private readonly bool offsetIsBigEndian;
-#pragma warning restore IDE0032 // Use auto property
 
             public ParserIFDEntry(EndianBinaryReader reader, ExifSection section)
             {
@@ -366,7 +357,7 @@ namespace HeicFileTypePlus.Exif
 
             public ExifSection Section { get; }
 
-            public unsafe byte[] GetValueBytesFromOffset()
+            public unsafe byte[]? GetValueBytesFromOffset()
             {
                 if (!this.OffsetFieldContainsValue)
                 {

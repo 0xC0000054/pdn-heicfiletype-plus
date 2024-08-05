@@ -23,13 +23,59 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
+#nullable enable
+
 namespace HeicFileTypePlus.Exif
 {
     internal sealed class ExifWriter
     {
-        private readonly Dictionary<ExifSection, Dictionary<ushort, ExifValue>> metadata;
-
         private const int FirstIFDOffset = 8;
+
+        private static readonly HashSet<ushort> supportedImageSectionTagsForWriting = new()
+        {
+            // The tags related to storing offsets are included for reference,
+            // but are not written to the EXIF blob.
+
+            // Tags relating to image data structure
+            256, // ImageWidth
+            257, // ImageLength
+            258, // BitsPerSample
+            259, // Compression
+            262, // PhotometricInterpretation
+            274, // Orientation
+            277, // SamplesPerPixel
+            284, // PlanarConfiguration
+            530, // YCbCrSubSampling
+            531, // YCbCrPositioning
+            282, // XResolution
+            283, // YResolution
+            296, // ResolutionUnit
+
+            // Tags relating to recording offset
+            //273, // StripOffsets
+            //278, // RowsPerStrip
+            //279, // StripByteCounts
+            //513, // JPEGInterchangeFormat
+            //514, // JPEGInterchangeFormatLength
+
+            // Tags relating to image data characteristics
+            301, // TransferFunction
+            318, // WhitePoint
+            319, // PrimaryChromaticities
+            529, // YCbCrCoefficients
+            532, // ReferenceBlackWhite
+
+            // Other tags
+            306, // DateTime
+            270, // ImageDescription
+            271, // Make
+            272, // Model
+            305, // Software
+            315, // Artist
+            33432 // Copyright
+        };
+
+        private readonly Dictionary<ExifSection, Dictionary<ushort, ExifValue>> metadata;
 
         public ExifWriter(Document doc, IDictionary<ExifPropertyPath, ExifValue> entries, ExifColorSpace exifColorSpace)
         {
@@ -56,12 +102,12 @@ namespace HeicFileTypePlus.Exif
                 WriteDirectory(writer, this.metadata[ExifSection.Image], imageInfo.IFDEntries, imageInfo.StartOffset);
                 WriteDirectory(writer, this.metadata[ExifSection.Photo], exifInfo.IFDEntries, exifInfo.StartOffset);
 
-                if (ifdEntries.TryGetValue(ExifSection.Interop, out IFDEntryInfo interopInfo))
+                if (ifdEntries.TryGetValue(ExifSection.Interop, out IFDEntryInfo? interopInfo))
                 {
                     WriteDirectory(writer, this.metadata[ExifSection.Interop], interopInfo.IFDEntries, interopInfo.StartOffset);
                 }
 
-                if (ifdEntries.TryGetValue(ExifSection.GpsInfo, out IFDEntryInfo gpsInfo))
+                if (ifdEntries.TryGetValue(ExifSection.GpsInfo, out IFDEntryInfo? gpsInfo))
                 {
                     WriteDirectory(writer, this.metadata[ExifSection.GpsInfo], gpsInfo.IFDEntries, gpsInfo.StartOffset);
                 }
@@ -133,14 +179,14 @@ namespace HeicFileTypePlus.Exif
         {
             IFDEntryInfo imageIFDInfo = CreateIFDList(this.metadata[ExifSection.Image], FirstIFDOffset);
             IFDEntryInfo exifIFDInfo = CreateIFDList(this.metadata[ExifSection.Photo], imageIFDInfo.NextAvailableOffset);
-            IFDEntryInfo interopIFDInfo = null;
-            IFDEntryInfo gpsIFDInfo = null;
+            IFDEntryInfo? interopIFDInfo = null;
+            IFDEntryInfo? gpsIFDInfo = null;
 
             UpdateSubIFDOffset(ref imageIFDInfo,
                                ExifPropertyKeys.Image.ExifTag.Path.TagID,
                                (uint)exifIFDInfo.StartOffset);
 
-            if (this.metadata.TryGetValue(ExifSection.Interop, out Dictionary<ushort, ExifValue> interopSection))
+            if (this.metadata.TryGetValue(ExifSection.Interop, out Dictionary<ushort, ExifValue>? interopSection))
             {
                 interopIFDInfo = CreateIFDList(interopSection, exifIFDInfo.NextAvailableOffset);
 
@@ -149,7 +195,7 @@ namespace HeicFileTypePlus.Exif
                                    (uint)interopIFDInfo.StartOffset);
             }
 
-            if (this.metadata.TryGetValue(ExifSection.GpsInfo, out Dictionary<ushort, ExifValue> gpsSection))
+            if (this.metadata.TryGetValue(ExifSection.GpsInfo, out Dictionary<ushort, ExifValue>? gpsSection))
             {
                 long startOffset = interopIFDInfo?.NextAvailableOffset ?? exifIFDInfo.NextAvailableOffset;
                 gpsIFDInfo = CreateIFDList(gpsSection, startOffset);
@@ -175,8 +221,8 @@ namespace HeicFileTypePlus.Exif
         private static IFDInfo CreateIFDInfo(
             IFDEntryInfo imageIFDInfo,
             IFDEntryInfo exifIFDInfo,
-            IFDEntryInfo interopIFDInfo,
-            IFDEntryInfo gpsIFDInfo)
+            IFDEntryInfo? interopIFDInfo,
+            IFDEntryInfo? gpsIFDInfo)
         {
             Dictionary<ExifSection, IFDEntryInfo> entries = new()
             {
@@ -220,7 +266,7 @@ namespace HeicFileTypePlus.Exif
                 {
                     case ExifValueType.Byte:
                     case ExifValueType.Ascii:
-                    case (ExifValueType)6: // SByte
+                    case ExifValueType.SByte:
                     case ExifValueType.Undefined:
                         count = lengthInBytes;
                         break;
@@ -231,6 +277,7 @@ namespace HeicFileTypePlus.Exif
                     case ExifValueType.Long:
                     case ExifValueType.SLong:
                     case ExifValueType.Float:
+                    case ExifValueType.Ifd:
                         count = lengthInBytes / 4;
                         break;
                     case ExifValueType.Rational:
@@ -404,12 +451,12 @@ namespace HeicFileTypePlus.Exif
 
                 ExifSection section = key.Section;
 
-                if (section == ExifSection.Image && !ExifTagHelper.CanWriteImageSectionTag(key.TagID))
+                if (section == ExifSection.Image && !supportedImageSectionTagsForWriting.Contains(key.TagID))
                 {
                     continue;
                 }
 
-                if (metadataEntries.TryGetValue(section, out Dictionary<ushort, ExifValue> values))
+                if (metadataEntries.TryGetValue(section, out Dictionary<ushort, ExifValue>? values))
                 {
                     values.TryAdd(key.TagID, value);
                 }
@@ -434,7 +481,7 @@ namespace HeicFileTypePlus.Exif
 
         private static void AddVersionEntries(ref Dictionary<ExifSection, Dictionary<ushort, ExifValue>> metadataEntries)
         {
-            if (metadataEntries.TryGetValue(ExifSection.Photo, out Dictionary<ushort, ExifValue> exifItems))
+            if (metadataEntries.TryGetValue(ExifSection.Photo, out Dictionary<ushort, ExifValue>? exifItems))
             {
                 if (!exifItems.ContainsKey(ExifPropertyKeys.Photo.ExifVersion.Path.TagID))
                 {
@@ -445,7 +492,7 @@ namespace HeicFileTypePlus.Exif
                 }
             }
 
-            if (metadataEntries.TryGetValue(ExifSection.GpsInfo, out Dictionary<ushort, ExifValue> gpsItems))
+            if (metadataEntries.TryGetValue(ExifSection.GpsInfo, out Dictionary<ushort, ExifValue>? gpsItems))
             {
                 if (!gpsItems.ContainsKey(ExifPropertyKeys.GpsInfo.GPSVersionID.Path.TagID))
                 {
@@ -456,7 +503,7 @@ namespace HeicFileTypePlus.Exif
                 }
             }
 
-            if (metadataEntries.TryGetValue(ExifSection.Interop, out Dictionary<ushort, ExifValue> interopItems))
+            if (metadataEntries.TryGetValue(ExifSection.Interop, out Dictionary<ushort, ExifValue>? interopItems))
             {
                 if (!interopItems.ContainsKey(ExifPropertyKeys.Interop.InteroperabilityVersion.Path.TagID))
                 {

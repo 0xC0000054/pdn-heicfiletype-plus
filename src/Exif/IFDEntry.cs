@@ -19,10 +19,11 @@
 using PaintDotNet.Imaging;
 using System;
 
+#nullable enable
+
 namespace HeicFileTypePlus.Exif
 {
-    internal readonly struct IFDEntry
-        : IEquatable<IFDEntry>
+    internal readonly struct IFDEntry : IEquatable<IFDEntry>
     {
         public const int SizeOf = 12;
 
@@ -50,7 +51,7 @@ namespace HeicFileTypePlus.Exif
 
         public uint Offset { get; }
 
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
             return obj is IFDEntry entry && Equals(entry);
         }

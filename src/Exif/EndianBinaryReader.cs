@@ -16,16 +16,19 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+using PaintDotNet;
 using System;
+using System.Buffers;
+using System.Buffers.Binary;
 using System.IO;
+using System.Runtime.CompilerServices;
 
 namespace HeicFileTypePlus.Exif
 {
     // Adapted from 'Problem and Solution: The Terrible Inefficiency of FileStream and BinaryReader'
     // https://jacksondunstan.com/articles/3568
 
-    internal sealed class EndianBinaryReader
-        : IDisposable
+    internal sealed class EndianBinaryReader : Disposable
     {
 #pragma warning disable IDE0032 // Use auto property
         private Stream stream;
@@ -37,8 +40,6 @@ namespace HeicFileTypePlus.Exif
         private readonly Endianess endianess;
         private readonly bool leaveOpen;
 #pragma warning restore IDE0032 // Use auto property
-
-        private const int MaxBufferSize = 4096;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="EndianBinaryReader"/> class.
@@ -62,8 +63,8 @@ namespace HeicFileTypePlus.Exif
         public EndianBinaryReader(Stream stream, Endianess byteOrder, bool leaveOpen)
         {
             this.stream = stream ?? throw new ArgumentNullException(nameof(stream));
-            this.bufferSize = (int)Math.Min(stream.Length, MaxBufferSize);
-            this.buffer = new byte[this.bufferSize];
+            this.bufferSize = (int)Math.Min(stream.Length, 4096);
+            this.buffer = ArrayPool<byte>.Shared.Rent(this.bufferSize);
             this.endianess = byteOrder;
             this.leaveOpen = leaveOpen;
 
@@ -110,7 +111,7 @@ namespace HeicFileTypePlus.Exif
             {
                 if (value < 0)
                 {
-                    throw new ArgumentOutOfRangeException("value");
+                    throw new ArgumentOutOfRangeException(nameof(value));
                 }
                 VerifyNotDisposed();
 
@@ -138,18 +139,6 @@ namespace HeicFileTypePlus.Exif
         }
 
         /// <summary>
-        /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
-        /// </summary>
-        public void Dispose()
-        {
-            if (this.stream != null && !this.leaveOpen)
-            {
-                this.stream.Dispose();
-                this.stream = null;
-            }
-        }
-
-        /// <summary>
         /// Reads the specified number of bytes from the stream, starting from a specified point in the byte array.
         /// </summary>
         /// <param name="bytes">The bytes.</param>
@@ -162,7 +151,7 @@ namespace HeicFileTypePlus.Exif
         /// <exception cref="ObjectDisposedException">The object has been disposed.</exception>
         public int Read(byte[] bytes, int offset, int count)
         {
-            if (bytes is null)
+            if (bytes == null)
             {
                 throw new ArgumentNullException(nameof(bytes));
             }
@@ -216,16 +205,6 @@ namespace HeicFileTypePlus.Exif
         {
             VerifyNotDisposed();
 
-            return ReadByteInternal();
-        }
-
-        /// <summary>
-        /// Reads the next byte from the current stream.
-        /// </summary>
-        /// <returns>The next byte read from the current stream.</returns>
-        /// <exception cref="EndOfStreamException">The end of the stream has been reached.</exception>
-        private byte ReadByteInternal()
-        {
             EnsureBuffer(sizeof(byte));
 
             byte val = this.buffer[this.readOffset];
@@ -332,15 +311,21 @@ namespace HeicFileTypePlus.Exif
 
             EnsureBuffer(sizeof(ushort));
 
-            ushort val;
+            ushort value = Unsafe.ReadUnaligned<ushort>(ref this.buffer[this.readOffset]);
 
             switch (this.endianess)
             {
                 case Endianess.Big:
-                    val = (ushort)((this.buffer[this.readOffset] << 8) | this.buffer[this.readOffset + 1]);
+                    if (BitConverter.IsLittleEndian)
+                    {
+                        value = BinaryPrimitives.ReverseEndianness(value);
+                    }
                     break;
                 case Endianess.Little:
-                    val = (ushort)(this.buffer[this.readOffset] | (this.buffer[this.readOffset + 1] << 8));
+                    if (!BitConverter.IsLittleEndian)
+                    {
+                        value = BinaryPrimitives.ReverseEndianness(value);
+                    }
                     break;
                 default:
                     throw new InvalidOperationException("Unsupported byte order: " + this.endianess.ToString());
@@ -348,7 +333,7 @@ namespace HeicFileTypePlus.Exif
 
             this.readOffset += sizeof(ushort);
 
-            return val;
+            return value;
         }
 
         /// <summary>
@@ -374,15 +359,21 @@ namespace HeicFileTypePlus.Exif
 
             EnsureBuffer(sizeof(uint));
 
-            uint val;
+            uint value = Unsafe.ReadUnaligned<uint>(ref this.buffer[this.readOffset]);
 
             switch (this.endianess)
             {
                 case Endianess.Big:
-                    val = (uint)((this.buffer[this.readOffset] << 24) | (this.buffer[this.readOffset + 1] << 16) | (this.buffer[this.readOffset + 2] << 8) | this.buffer[this.readOffset + 3]);
+                    if (BitConverter.IsLittleEndian)
+                    {
+                        value = BinaryPrimitives.ReverseEndianness(value);
+                    }
                     break;
                 case Endianess.Little:
-                    val = (uint)(this.buffer[this.readOffset] | (this.buffer[this.readOffset + 1] << 8) | (this.buffer[this.readOffset + 2] << 16) | (this.buffer[this.readOffset + 3] << 24));
+                    if (!BitConverter.IsLittleEndian)
+                    {
+                        value = BinaryPrimitives.ReverseEndianness(value);
+                    }
                     break;
                 default:
                     throw new InvalidOperationException("Unsupported byte order: " + this.endianess.ToString());
@@ -390,7 +381,7 @@ namespace HeicFileTypePlus.Exif
 
             this.readOffset += sizeof(uint);
 
-            return val;
+            return value;
         }
 
         /// <summary>
@@ -429,18 +420,21 @@ namespace HeicFileTypePlus.Exif
 
             EnsureBuffer(sizeof(ulong));
 
-            uint hi;
-            uint lo;
+            ulong value = Unsafe.ReadUnaligned<ulong>(ref this.buffer[this.readOffset]);
 
             switch (this.endianess)
             {
                 case Endianess.Big:
-                    hi = (uint)((this.buffer[this.readOffset] << 24) | (this.buffer[this.readOffset + 1] << 16) | (this.buffer[this.readOffset + 2] << 8) | this.buffer[this.readOffset + 3]);
-                    lo = (uint)((this.buffer[this.readOffset + 4] << 24) | (this.buffer[this.readOffset + 5] << 16) | (this.buffer[this.readOffset + 6] << 8) | this.buffer[this.readOffset + 7]);
+                    if (BitConverter.IsLittleEndian)
+                    {
+                        value = BinaryPrimitives.ReverseEndianness(value);
+                    }
                     break;
                 case Endianess.Little:
-                    lo = (uint)(this.buffer[this.readOffset] | (this.buffer[this.readOffset + 1] << 8) | (this.buffer[this.readOffset + 2] << 16) | (this.buffer[this.readOffset + 3] << 24));
-                    hi = (uint)(this.buffer[this.readOffset + 4] | (this.buffer[this.readOffset + 5] << 8) | (this.buffer[this.readOffset + 6] << 16) | (this.buffer[this.readOffset + 7] << 24));
+                    if (!BitConverter.IsLittleEndian)
+                    {
+                        value = BinaryPrimitives.ReverseEndianness(value);
+                    }
                     break;
                 default:
                     throw new InvalidOperationException("Unsupported byte order: " + this.endianess.ToString());
@@ -448,7 +442,52 @@ namespace HeicFileTypePlus.Exif
 
             this.readOffset += sizeof(ulong);
 
-            return (((ulong)hi) << 32) | lo;
+            return value;
+        }
+
+        /// <summary>
+        /// Reads an ASCII string from the stream.
+        /// </summary>
+        /// <param name="length">The length of the string.</param>
+        /// <returns>The string.</returns>
+        /// <exception cref="ArgumentOutOfRangeException"><paramref name="length"/> is negative.</exception>
+        /// <exception cref="EndOfStreamException">The end of the stream has been reached.</exception>
+        /// <exception cref="ObjectDisposedException">The object has been disposed.</exception>
+        public string ReadAsciiString(int length)
+        {
+            if (length < 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(length));
+            }
+            VerifyNotDisposed();
+
+            if (length == 0)
+            {
+                return string.Empty;
+            }
+
+            EnsureBuffer(length);
+
+            string value = System.Text.Encoding.ASCII.GetString(this.buffer, this.readOffset, length);
+
+            this.readOffset += length;
+
+            return value;
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                if (!this.leaveOpen)
+                {
+                    this.stream.Dispose();
+                }
+
+                ArrayPool<byte>.Shared.Return(this.buffer);
+            }
+
+            base.Dispose(disposing);
         }
 
         /// <summary>
@@ -504,7 +543,7 @@ namespace HeicFileTypePlus.Exif
         /// <exception cref="ObjectDisposedException">The object has been disposed.</exception>
         private void VerifyNotDisposed()
         {
-            if (this.stream is null)
+            if (this.IsDisposed)
             {
                 throw new ObjectDisposedException(nameof(EndianBinaryReader));
             }
