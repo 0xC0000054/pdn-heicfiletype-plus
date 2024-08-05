@@ -1,8 +1,16 @@
+cicp
+Deserialize
+Endian
+Endianess
 Exif
 Heic
 heicfiletype
 Heif
+ifd
 Interop
 libheif
+Metadata
 pdn
 plugin
+Subsampling
+tu
