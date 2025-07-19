@@ -21,6 +21,7 @@ using HeicFileTypePlus.Interop;
 using PaintDotNet;
 using PaintDotNet.Imaging;
 using System;
+using System.Buffers.Binary;
 using System.Collections.Generic;
 using System.IO;
 
@@ -160,7 +161,7 @@ namespace HeicFileTypePlus
             // that come before the start of the TIFF header.
             // See ISO/IEC 23008-12:2017 section A.2.1.
 
-            if (TryReadInt32BigEndian(exifData, 0, out int tiffStartOffset))
+            if (TryReadInt32BigEndian(exifData, out int tiffStartOffset))
             {
                 int startIndex = 4;
                 if (tiffStartOffset > 0)
@@ -181,21 +182,16 @@ namespace HeicFileTypePlus
 
             return metadataEntries;
 
-            static bool TryReadInt32BigEndian(byte[] bytes, int startOffset, out int value)
+            static bool TryReadInt32BigEndian(ReadOnlySpan<byte> bytes, out int value)
             {
                 value = 0;
 
-                if (bytes is null)
+                if (bytes.Length <= sizeof(int))
                 {
                     return false;
                 }
 
-                if ((startOffset + sizeof(int)) > bytes.Length)
-                {
-                    return false;
-                }
-
-                value = (bytes[startOffset + 0] << 24) | (bytes[startOffset + 1] << 16) | (bytes[startOffset + 2] << 8) | bytes[startOffset + 3];
+                value = BinaryPrimitives.ReadInt32BigEndian(bytes);
                 return true;
             }
         }
