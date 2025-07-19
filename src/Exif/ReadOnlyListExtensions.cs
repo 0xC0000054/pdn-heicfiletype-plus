@@ -35,7 +35,7 @@ namespace HeicFileTypePlus.Exif
             }
             else
             {
-                return PaintDotNet.Collections.EnumerableExtensions.ToArrayEx(items);
+                return [.. items];
             }
         }
     }

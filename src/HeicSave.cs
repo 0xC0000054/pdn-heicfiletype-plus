@@ -139,7 +139,7 @@ namespace HeicFileTypePlus
 
                 if (exifMetadata.TryGetValue(iccProfileKey, out ExifValue iccProfileItem))
                 {
-                    iccProfileBytes = PaintDotNet.Collections.EnumerableExtensions.ToArrayEx(iccProfileItem.Data);
+                    iccProfileBytes = [.. iccProfileItem.Data];
                     exifMetadata.Remove(iccProfileKey);
                     exifColorSpace = Exif.ExifColorSpace.Uncalibrated;
                 }
