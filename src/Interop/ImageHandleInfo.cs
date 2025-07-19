@@ -21,13 +21,10 @@ using System.Runtime.InteropServices;
 namespace HeicFileTypePlus.Interop
 {
     [StructLayout(LayoutKind.Sequential)]
-    internal sealed class PrimaryImageInfo
+    internal sealed class ImageHandleInfo
     {
         public int width;
         public int height;
-        [MarshalAs(UnmanagedType.U1)]
-        public bool hasExif;
-        [MarshalAs(UnmanagedType.U1)]
-        public bool hasXmp;
+        public CICPColorData cicp;
     }
 }

@@ -91,12 +91,10 @@ namespace HeicFileTypePlus
             }
         }
 
-        internal static unsafe void GetPrimaryImage(SafeHeifContext context,
-                                                    out SafeHeifImageHandle primaryImageHandle,
-                                                    out PrimaryImageInfo info)
+        internal static unsafe HeifImageHandle GetPrimaryImage(SafeHeifContext context)
         {
-            primaryImageHandle = null;
-            info = new PrimaryImageInfo();
+            SafeHeifImageHandle primaryImageHandle = null;
+            ImageHandleInfo info = new();
 
             HeicErrorDetails errorDetails = new();
             HeicErrorDetailsCopy copyErrorDetailsCallback = new(errorDetails.Copy);
@@ -138,6 +136,20 @@ namespace HeicFileTypePlus
                 throw new PlatformNotSupportedException();
             }
             GC.KeepAlive(copyErrorDetailsCallback);
+
+            HeifImageHandle imageHandle = null;
+
+            try
+            {
+                imageHandle = new(primaryImageHandle, info);
+                primaryImageHandle = null;
+            }
+            finally
+            {
+                primaryImageHandle?.Dispose();
+            }
+
+            return imageHandle;
         }
 
         internal static unsafe void DecodeImage(SafeHeifImageHandle imageHandle, Surface surface)
@@ -220,41 +232,48 @@ namespace HeicFileTypePlus
             }
         }
 
-        internal static void GetCICPColorData(SafeHeifImageHandle imageHandle, out CICPColorData colorData)
+        internal static bool GetMetadataId(SafeHeifImageHandle imageHandle, MetadataType type, out uint id)
         {
+            bool result = false;
             Status status;
 
             if (RuntimeInformation.ProcessArchitecture == Architecture.X64)
             {
-                status = HeicIO_x64.GetCICPColorData(imageHandle, out colorData);
+                status = HeicIO_x64.GetMetadataId(imageHandle, type, out id);
             }
             else if (RuntimeInformation.ProcessArchitecture == Architecture.Arm64)
             {
-                status = HeicIO_ARM64.GetCICPColorData(imageHandle, out colorData);
+                status = HeicIO_ARM64.GetMetadataId(imageHandle, type, out id);
             }
             else
             {
                 throw new PlatformNotSupportedException();
             }
 
-            if (status != Status.Ok)
+            if (status == Status.Ok)
+            {
+                result = true;
+            }
+            else if (status != Status.NoMatchingMetadata)
             {
                 HandleReadError(status);
             }
+
+            return result;
         }
 
-        internal static nuint GetMetadataSize(SafeHeifImageHandle imageHandle, MetadataType metadataType)
+        internal static nuint GetMetadataSize(SafeHeifImageHandle imageHandle, uint id)
         {
             nuint size;
             Status status;
 
             if (RuntimeInformation.ProcessArchitecture == Architecture.X64)
             {
-                status = HeicIO_x64.GetMetadataSize(imageHandle, metadataType, out size);
+                status = HeicIO_x64.GetMetadataSize(imageHandle, id, out size);
             }
             else if (RuntimeInformation.ProcessArchitecture == Architecture.Arm64)
             {
-                status = HeicIO_ARM64.GetMetadataSize(imageHandle, metadataType, out size);
+                status = HeicIO_ARM64.GetMetadataSize(imageHandle, id, out size);
             }
             else
             {
@@ -269,17 +288,17 @@ namespace HeicFileTypePlus
             return size;
         }
 
-        internal static void GetMetadata(SafeHeifImageHandle imageHandle, MetadataType metadataType, byte[] buffer)
+        internal static void GetMetadata(SafeHeifImageHandle imageHandle, uint id, byte[] buffer)
         {
             Status status;
 
             if (RuntimeInformation.ProcessArchitecture == Architecture.X64)
             {
-                status = HeicIO_x64.GetMetadata(imageHandle, metadataType, buffer, (uint)buffer.Length);
+                status = HeicIO_x64.GetMetadata(imageHandle, id, buffer, (uint)buffer.Length);
             }
             else if (RuntimeInformation.ProcessArchitecture == Architecture.Arm64)
             {
-                status = HeicIO_ARM64.GetMetadata(imageHandle, metadataType, buffer, (uint)buffer.Length);
+                status = HeicIO_ARM64.GetMetadata(imageHandle, id, buffer, (uint)buffer.Length);
             }
             else
             {

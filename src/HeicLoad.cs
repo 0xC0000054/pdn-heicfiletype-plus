@@ -42,20 +42,20 @@ namespace HeicFileTypePlus
                 {
                     HeicNative.LoadFileIntoContext(context, fileIO);
 
-                    SafeHeifImageHandle primaryImageHandle = null;
+                    HeifImageHandle primaryImageHandle = null;
                     Surface surface = null;
                     bool disposeSurface = true;
 
                     try
                     {
-                        HeicNative.GetPrimaryImage(context, out primaryImageHandle, out PrimaryImageInfo primaryImageInfo);
+                        primaryImageHandle = HeicNative.GetPrimaryImage(context);
 
-                        surface = new Surface(primaryImageInfo.width, primaryImageInfo.height);
+                        surface = new Surface(primaryImageHandle.Width, primaryImageHandle.Height);
 
-                        HeicNative.DecodeImage(primaryImageHandle, surface);
+                        HeicNative.DecodeImage(primaryImageHandle.SafeHeifImageHandle, surface);
 
                         doc = new Document(surface.Width, surface.Height);
-                        AddMetadataToDocument(doc, primaryImageHandle, primaryImageInfo);
+                        AddMetadataToDocument(doc, primaryImageHandle);
                         doc.Layers.Add(Layer.CreateBackgroundLayer(surface, true));
                         disposeSurface = false;
                     }
@@ -93,84 +93,58 @@ namespace HeicFileTypePlus
         }
 
 
-        private static void AddMetadataToDocument(Document document, SafeHeifImageHandle primaryImageHandle, PrimaryImageInfo primaryImageInfo)
+        private static void AddMetadataToDocument(Document document, HeifImageHandle primaryImageHandle)
         {
-            if (primaryImageInfo.hasExif)
+            byte[] exifData = primaryImageHandle.GetExif();
+
+            if (exifData != null)
             {
-                byte[] exifData = TryGetMetadata(primaryImageHandle, MetadataType.Exif);
+                ExifValueCollection metadataEntries = TryParseExifData(exifData);
 
-                if (exifData != null)
+                if (metadataEntries != null)
                 {
-                    ExifValueCollection metadataEntries = TryParseExifData(exifData);
+                    metadataEntries.Remove(ExifPropertyKeys.Image.InterColorProfile.Path);
+                    // The HEIF specification states that the EXIF orientation tag is only
+                    // informational and should not be used to rotate the image.
+                    // See https://github.com/strukturag/libheif/issues/227#issuecomment-642165942
+                    metadataEntries.Remove(ExifPropertyKeys.Image.Orientation.Path);
 
-                    if (metadataEntries != null)
+                    foreach (KeyValuePair<ExifPropertyPath, ExifValue> item in metadataEntries)
                     {
-                        metadataEntries.Remove(ExifPropertyKeys.Image.InterColorProfile.Path);
-                        // The HEIF specification states that the EXIF orientation tag is only
-                        // informational and should not be used to rotate the image.
-                        // See https://github.com/strukturag/libheif/issues/227#issuecomment-642165942
-                        metadataEntries.Remove(ExifPropertyKeys.Image.Orientation.Path);
+                        ExifPropertyPath path = item.Key;
 
-                        foreach (KeyValuePair<ExifPropertyPath, ExifValue> item in metadataEntries)
-                        {
-                            ExifPropertyPath path = item.Key;
-
-                            document.Metadata.AddExifPropertyItem(path.Section, path.TagID, item.Value);
-                        }
+                        document.Metadata.AddExifPropertyItem(path.Section, path.TagID, item.Value);
                     }
                 }
             }
 
-            nuint iccProfileSize = HeicNative.GetICCProfileSize(primaryImageHandle);
+            byte[] iccProfile = primaryImageHandle.GetIccProfile();
 
-            if (iccProfileSize > 0 && iccProfileSize <= int.MaxValue)
+            if (iccProfile != null)
             {
-                byte[] iccProfile = new byte[iccProfileSize];
-                HeicNative.GetICCProfile(primaryImageHandle, iccProfile);
-
                 document.Metadata.AddExifPropertyItem(ExifSection.Image,
                                                       ExifPropertyKeys.Image.InterColorProfile.Path.TagID,
                                                       new ExifValue(ExifValueType.Undefined, iccProfile));
             }
 
-            HeicNative.GetCICPColorData(primaryImageHandle, out CICPColorData colorData);
-
-            string serializedCICPData = CICPSerializer.TrySerialize(colorData);
+            string serializedCICPData = CICPSerializer.TrySerialize(primaryImageHandle.CICPColorData);
 
             if (serializedCICPData != null)
             {
                 document.Metadata.SetUserValue(HeicMetadataNames.CICPMetadataName, serializedCICPData);
             }
 
-            if (primaryImageInfo.hasXmp)
-            {
-                byte[] xmpData = TryGetMetadata(primaryImageHandle, MetadataType.Xmp);
+            byte[] xmpData = primaryImageHandle.GetXmp();
 
-                if (xmpData != null)
+            if (xmpData != null)
+            {
+                XmpPacket packet = XmpPacket.TryParse(xmpData);
+
+                if (packet != null)
                 {
-                    XmpPacket packet = XmpPacket.TryParse(xmpData);
-                    if (packet != null)
-                    {
-                        document.Metadata.SetXmpPacket(packet);
-                    }
+                    document.Metadata.SetXmpPacket(packet);
                 }
             }
-        }
-
-        private static byte[] TryGetMetadata(SafeHeifImageHandle primaryImageHandle, MetadataType metadataType)
-        {
-            byte[] data = null;
-
-            nuint size = HeicNative.GetMetadataSize(primaryImageHandle, metadataType);
-
-            if (size > 0 && size <= int.MaxValue)
-            {
-                data = new byte[size];
-
-                HeicNative.GetMetadata(primaryImageHandle, metadataType, data);
-            }
-
-            return data;
         }
 
         private static ExifValueCollection TryParseExifData(byte[] exifData)

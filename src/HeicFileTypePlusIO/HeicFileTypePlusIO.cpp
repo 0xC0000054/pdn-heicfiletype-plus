@@ -65,7 +65,7 @@ Status __stdcall LoadFileIntoContext(
 Status __stdcall GetPrimaryImage(
     heif_context* context,
     heif_image_handle** primaryImageHandle,
-    PrimaryImageInfo* info,
+    ImageHandleInfo* info,
     const CopyErrorDetails copyErrorDetails)
 {
     if (!context || !primaryImageHandle || !info)
@@ -101,8 +101,27 @@ Status __stdcall GetPrimaryImage(
 
     info->width = heif_image_handle_get_width(*primaryImageHandle);
     info->height = heif_image_handle_get_height(*primaryImageHandle);
-    info->hasExif = HasExifMetadata(*primaryImageHandle);
-    info->hasXmp = HasXmpMetadata(*primaryImageHandle);
+
+    heif_color_profile_nclx* nclxProfile;
+
+    error = heif_image_handle_get_nclx_color_profile(*primaryImageHandle, &nclxProfile);
+
+    if (error.code == heif_error_Ok)
+    {
+        info->cicp.colorPrimaries = nclxProfile->color_primaries;
+        info->cicp.transferCharacteristics = nclxProfile->transfer_characteristics;
+        info->cicp.matrixCoefficients = nclxProfile->matrix_coefficients;
+        info->cicp.fullRange = nclxProfile->full_range_flag != 0;
+
+        heif_nclx_color_profile_free(nclxProfile);
+    }
+    else
+    {
+        info->cicp.colorPrimaries = heif_color_primaries_unspecified;
+        info->cicp.transferCharacteristics = heif_transfer_characteristic_unspecified;
+        info->cicp.matrixCoefficients = heif_matrix_coefficients_unspecified;
+        info->cicp.fullRange = false;
+    }
 
     return Status::Ok;
 }
@@ -152,127 +171,68 @@ Status __stdcall GetICCProfile(heif_image_handle* imageHandle, uint8_t* buffer, 
     return Status::Ok;
 }
 
-Status __stdcall GetCICPColorData(heif_image_handle* imageHandle, CICPColorData* data)
+Status __stdcall GetMetadataId(heif_image_handle* imageHandle, MetadataType type, heif_item_id* id)
 {
-    if (!imageHandle || !data)
+    if (!imageHandle || !id)
     {
         return Status::NullParameter;
     }
 
-    heif_color_profile_nclx* nclxProfile;
+    Status status;
 
-    heif_error error = heif_image_handle_get_nclx_color_profile(imageHandle, &nclxProfile);
-
-    if (error.code == heif_error_Ok)
+    switch (type)
     {
-        data->colorPrimaries = nclxProfile->color_primaries;
-        data->transferCharacteristics = nclxProfile->transfer_characteristics;
-        data->matrixCoefficients = nclxProfile->matrix_coefficients;
-        data->fullRange = nclxProfile->full_range_flag;
-
-        heif_nclx_color_profile_free(nclxProfile);
-    }
-    else if (error.code == heif_error_Color_profile_does_not_exist)
-    {
-        data->colorPrimaries = heif_color_primaries_unspecified;
-        data->transferCharacteristics = heif_transfer_characteristic_unspecified;
-        data->matrixCoefficients = heif_matrix_coefficients_unspecified;
-        data->fullRange = false;
-    }
-    else
-    {
-        switch (error.code)
-        {
-        case heif_error_Memory_allocation_error:
-            return Status::OutOfMemory;
-        default:
-            return Status::ColorInformationError;
-        }
+    case MetadataType::Exif:
+        status = GetExifMetadataID(imageHandle, id);
+        break;
+    case MetadataType::Xmp:
+        status = GetXmpMetadataID(imageHandle, id);
+        break;
+    default:
+        status = Status::InvalidParameter;
+        break;
     }
 
-    return Status::Ok;
+    return status;
 }
 
-Status __stdcall GetMetadataSize(heif_image_handle* imageHandle, MetadataType type, size_t* size)
+Status __stdcall GetMetadataSize(heif_image_handle* imageHandle, heif_item_id id, size_t* size)
 {
     if (!imageHandle || !size)
     {
         return Status::NullParameter;
     }
 
-    Status status;
-    heif_item_id id;
-
-    switch (type)
-    {
-    case MetadataType::Exif:
-        status = GetExifMetadataID(imageHandle, &id);
-        break;
-    case MetadataType::Xmp:
-        status = GetXmpMetadataID(imageHandle, &id);
-        break;
-    default:
-        return Status::InvalidParameter;
-    }
-
-    if (status == Status::Ok)
-    {
-        *size = heif_image_handle_get_metadata_size(imageHandle, id);
-    }
-    else
-    {
-        *size = 0;
-    }
-
+    *size = heif_image_handle_get_metadata_size(imageHandle, id);
     return Status::Ok;
 }
 
-Status __stdcall GetMetadata(heif_image_handle* imageHandle, MetadataType type, uint8_t* buffer, size_t bufferSize)
+Status __stdcall GetMetadata(heif_image_handle* imageHandle, heif_item_id id, uint8_t* buffer, size_t bufferSize)
 {
     if (!imageHandle || !buffer)
     {
         return Status::NullParameter;
     }
 
-    Status status;
-    heif_item_id id;
-
-    switch (type)
+    if (bufferSize < heif_image_handle_get_metadata_size(imageHandle, id))
     {
-    case MetadataType::Exif:
-        status = GetExifMetadataID(imageHandle, &id);
-        break;
-    case MetadataType::Xmp:
-        status = GetXmpMetadataID(imageHandle, &id);
-        break;
-    default:
-        return Status::InvalidParameter;
+        return Status::BufferTooSmall;
     }
 
-    if (status == Status::Ok)
+    heif_error error = heif_image_handle_get_metadata(imageHandle, id, buffer);
+
+    if (error.code != heif_error_Ok)
     {
-        if (bufferSize < heif_image_handle_get_metadata_size(imageHandle, id))
+        switch (error.code)
         {
-            return Status::BufferTooSmall;
-        }
-
-        heif_error error = heif_image_handle_get_metadata(imageHandle, id, buffer);
-
-        if (error.code != heif_error_Ok)
-        {
-            switch (error.code)
-            {
-            case heif_error_Memory_allocation_error:
-                status = Status::OutOfMemory;
-                break;
-            default:
-                status = Status::MetadataError;
-                break;
-            }
+        case heif_error_Memory_allocation_error:
+            return Status::OutOfMemory;
+        default:
+            return Status::MetadataError;
         }
     }
 
-    return status;
+    return Status::Ok;
 }
 
 Status __stdcall SaveToFile(

@@ -39,7 +39,3 @@ Status AddXmpToImage(
 Status GetExifMetadataID(heif_image_handle* const handle, heif_item_id* exifId);
 
 Status GetXmpMetadataID(heif_image_handle* const handle, heif_item_id* xmpId);
-
-bool HasExifMetadata(heif_image_handle* const handle);
-
-bool HasXmpMetadata(heif_image_handle* const handle);

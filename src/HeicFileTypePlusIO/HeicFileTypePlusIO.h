@@ -84,12 +84,11 @@ struct CICPColorData
     bool fullRange;
 };
 
-struct PrimaryImageInfo
+struct ImageHandleInfo
 {
     int width;
     int height;
-    bool hasExif;
-    bool hasXmp;
+    CICPColorData cicp;
 };
 
 struct BitmapData
@@ -171,7 +170,7 @@ HEICFILETYPEPLUSIO_API Status __stdcall LoadFileIntoContext(
 HEICFILETYPEPLUSIO_API Status __stdcall GetPrimaryImage(
     heif_context* context,
     heif_image_handle** primaryImageHandle,
-    PrimaryImageInfo* info,
+    ImageHandleInfo* info,
     const CopyErrorDetails copyErrorDetails);
 
 HEICFILETYPEPLUSIO_API Status __stdcall DecodeImage(heif_image_handle* imageHandle, BitmapData* output);
@@ -180,11 +179,11 @@ HEICFILETYPEPLUSIO_API Status __stdcall GetICCProfileSize(heif_image_handle* ima
 
 HEICFILETYPEPLUSIO_API Status __stdcall GetICCProfile(heif_image_handle* imageHandle, uint8_t* buffer, size_t bufferSize);
 
-HEICFILETYPEPLUSIO_API Status __stdcall GetCICPColorData(heif_image_handle* imageHandle, CICPColorData* data);
+HEICFILETYPEPLUSIO_API Status __stdcall GetMetadataId(heif_image_handle* imageHandle, MetadataType type, heif_item_id* id);
 
-HEICFILETYPEPLUSIO_API Status __stdcall GetMetadataSize(heif_image_handle* imageHandle, MetadataType type, size_t* size);
+HEICFILETYPEPLUSIO_API Status __stdcall GetMetadataSize(heif_image_handle* imageHandle, heif_item_id id, size_t* size);
 
-HEICFILETYPEPLUSIO_API Status __stdcall GetMetadata(heif_image_handle* imageHandle, MetadataType type, uint8_t* buffer, size_t bufferSize);
+HEICFILETYPEPLUSIO_API Status __stdcall GetMetadata(heif_image_handle* imageHandle, heif_item_id id, uint8_t* buffer, size_t bufferSize);
 
 HEICFILETYPEPLUSIO_API Status __stdcall SaveToFile(
     const BitmapData* input,
