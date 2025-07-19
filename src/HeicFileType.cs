@@ -186,7 +186,7 @@ namespace HeicFileTypePlus
             EncoderTuning tuning = (EncoderTuning)token.GetProperty(PropertyNames.Tuning).Value;
             int tuIntraDepth = token.GetProperty<Int32Property>(PropertyNames.TUIntraDepth).Value;
 
-            HeicFile.Save(input, output, scratchSurface, quality, chromaSubsampling, preset, tuning, tuIntraDepth, progressCallback);
+            HeicSave.Save(input, output, scratchSurface, quality, chromaSubsampling, preset, tuning, tuIntraDepth, progressCallback);
         }
 
         /// <summary>
@@ -194,7 +194,7 @@ namespace HeicFileTypePlus
         /// </summary>
         protected override Document OnLoad(Stream input)
         {
-            return HeicFile.Load(input);
+            return HeicLoad.Load(input);
         }
     }
 }
