@@ -90,19 +90,6 @@ namespace HeicFileTypePlus
                     fullRange = true
                 };
             }
-            else
-            {
-                string serializedCICPData = input.Metadata.GetUserValue(HeicMetadataNames.CICPMetadataName);
-                if (serializedCICPData != null)
-                {
-                    CICPColorData? serializedColorData = CICPSerializer.TryDeserialize(serializedCICPData);
-
-                    if (serializedColorData.HasValue)
-                    {
-                        colorData = serializedColorData.Value;
-                    }
-                }
-            }
 
             using (HeifFileIO fileIO = new(output, leaveOpen: true))
             {

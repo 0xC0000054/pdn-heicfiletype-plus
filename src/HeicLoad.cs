@@ -128,13 +128,6 @@ namespace HeicFileTypePlus
                                                       new ExifValue(ExifValueType.Undefined, iccProfile));
             }
 
-            string serializedCICPData = CICPSerializer.TrySerialize(primaryImageHandle.CICPColorData);
-
-            if (serializedCICPData != null)
-            {
-                document.Metadata.SetUserValue(HeicMetadataNames.CICPMetadataName, serializedCICPData);
-            }
-
             byte[] xmpData = primaryImageHandle.GetXmp();
 
             if (xmpData != null)
