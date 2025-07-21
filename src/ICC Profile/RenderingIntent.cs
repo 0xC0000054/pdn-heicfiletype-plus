@@ -16,17 +16,13 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-using System.Runtime.InteropServices;
-
-namespace HeicFileTypePlus.Interop
+namespace HeicFileTypePlus.ICCProfile
 {
-    [StructLayout(LayoutKind.Sequential)]
-    internal sealed class ImageHandleInfo
+    internal enum RenderingIntent : uint
     {
-        public int width;
-        public int height;
-        public int bitDepth;
-        public ImageHandleColorProfileType colorProfileType;
-        public bool hasAlphaChannel;
+        Perceptual = 0,
+        RelativeColorimetric = 1,
+        Saturation = 2,
+        AbsoluteColorimetric = 3,
     }
 }

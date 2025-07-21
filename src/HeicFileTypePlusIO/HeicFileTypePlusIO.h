@@ -84,11 +84,26 @@ struct CICPColorData
     bool fullRange;
 };
 
+enum class ImageHandleColorProfileType
+{
+    NotPresent,
+    Icc,
+    Cicp
+};
+
 struct ImageHandleInfo
 {
     int width;
     int height;
-    CICPColorData cicp;
+    int bitDepth;
+    ImageHandleColorProfileType colorProfileType;
+    bool hasAlpha;
+};
+
+struct DecodedImageInfo
+{
+    heif_colorspace colorSpace;
+    heif_chroma chroma;
 };
 
 struct BitmapData
@@ -162,6 +177,8 @@ HEICFILETYPEPLUSIO_API bool __stdcall DeleteContext(heif_context* context);
 
 HEICFILETYPEPLUSIO_API bool __stdcall DeleteImageHandle(heif_image_handle* handle);
 
+HEICFILETYPEPLUSIO_API bool __stdcall DeleteImage(heif_image* handle);
+
 HEICFILETYPEPLUSIO_API Status __stdcall LoadFileIntoContext(
     heif_context* context,
     IOCallbacks* callbacks,
@@ -173,11 +190,20 @@ HEICFILETYPEPLUSIO_API Status __stdcall GetPrimaryImage(
     ImageHandleInfo* info,
     const CopyErrorDetails copyErrorDetails);
 
-HEICFILETYPEPLUSIO_API Status __stdcall DecodeImage(heif_image_handle* imageHandle, BitmapData* output);
+HEICFILETYPEPLUSIO_API Status __stdcall DecodeImage(
+    heif_image_handle* const imageHandle,
+    heif_colorspace colorSpace,
+    heif_chroma chroma,
+    heif_image** outputImage,
+    DecodedImageInfo* info);
+
+HEICFILETYPEPLUSIO_API uint8_t* __stdcall GetHeifImageChannel(heif_image* image, heif_channel channel, int* channelStride);
 
 HEICFILETYPEPLUSIO_API Status __stdcall GetICCProfileSize(heif_image_handle* imageHandle, size_t* size);
 
 HEICFILETYPEPLUSIO_API Status __stdcall GetICCProfile(heif_image_handle* imageHandle, uint8_t* buffer, size_t bufferSize);
+
+HEICFILETYPEPLUSIO_API Status __stdcall GetCICPColorData(heif_image_handle* imageHandle, CICPColorData* data);
 
 HEICFILETYPEPLUSIO_API Status __stdcall GetMetadataId(heif_image_handle* imageHandle, MetadataType type, heif_item_id* id);
 

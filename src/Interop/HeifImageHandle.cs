@@ -21,22 +21,34 @@ using System;
 
 namespace HeicFileTypePlus.Interop
 {
-    internal sealed class HeifImageHandle : Disposable
+    internal sealed class HeifImageHandle : Disposable, IHeifImageHandle
     {
         private readonly SafeHeifImageHandle safeHeifImageHandle;
         private readonly ImageHandleInfo info;
+        private readonly Lazy<CICPColorData> lazyCICPColorData;
+        private readonly Lazy<HDRFormat> lazyHDRFormat;
 
         public HeifImageHandle(SafeHeifImageHandle safeHeifImageHandle, ImageHandleInfo info)
         {
             this.safeHeifImageHandle = safeHeifImageHandle ?? throw new ArgumentNullException(nameof(safeHeifImageHandle));
             this.info = info ?? throw new ArgumentNullException(nameof(info));
+            this.lazyCICPColorData = new Lazy<CICPColorData>(CacheCICPColorData);
+            this.lazyHDRFormat = new Lazy<HDRFormat>(CacheHDRFormat);
         }
 
         public int Width => this.info.width;
 
         public int Height => this.info.height;
 
-        public CICPColorData CICPColorData => this.info.cicp;
+        public int BitDepth => this.info.bitDepth;
+
+        public CICPColorData CICPColorData => this.lazyCICPColorData.Value;
+
+        public ImageHandleColorProfileType ColorProfileType => this.info.colorProfileType;
+
+        public HDRFormat HDRFormat => this.lazyHDRFormat.Value;
+
+        public bool HasAlphaChannel => this.info.hasAlphaChannel;
 
         public SafeHeifImageHandle SafeHeifImageHandle
         {
@@ -48,6 +60,13 @@ namespace HeicFileTypePlus.Interop
             }
         }
 
+        public HeifImage Decode(HeifColorSpace colorSpace, HeifChroma chroma)
+        {
+            ObjectDisposedException.ThrowIf(this.IsDisposed, this);
+
+            return HeicNative.DecodeImage(this, colorSpace, chroma);
+        }
+
         public byte[] GetExif()
         {
             return TryGetMetadata(MetadataType.Exif);
@@ -57,7 +76,7 @@ namespace HeicFileTypePlus.Interop
         {
             byte[] profileBytes = null;
 
-            if (!this.IsDisposed)
+            if (!this.IsDisposed && this.ColorProfileType == ImageHandleColorProfileType.Icc)
             {
                 nuint size = HeicNative.GetICCProfileSize(this.safeHeifImageHandle);
 
@@ -85,6 +104,47 @@ namespace HeicFileTypePlus.Interop
             }
 
             base.Dispose(disposing);
+        }
+
+        private CICPColorData CacheCICPColorData()
+        {
+            CICPColorData colorData;
+
+            if (this.ColorProfileType == ImageHandleColorProfileType.Cicp)
+            {
+                HeicNative.GetCICPColorData(this.safeHeifImageHandle, out colorData);
+            }
+            else
+            {
+                // Return a default value if the image does not have CICP color data.
+                colorData = new()
+                {
+                    colorPrimaries = CICPColorPrimaries.Unspecified,
+                    transferCharacteristics = CICPTransferCharacteristics.Unspecified,
+                    matrixCoefficients = CICPMatrixCoefficients.Unspecified,
+                    fullRange = false,
+                };
+            }
+
+            return colorData;
+        }
+
+        private HDRFormat CacheHDRFormat()
+        {
+            HDRFormat hdrFormat = HDRFormat.None;
+
+            if (this.ColorProfileType == ImageHandleColorProfileType.Cicp)
+            {
+                CICPColorData colorData = this.CICPColorData;
+
+                if (colorData.colorPrimaries == CICPColorPrimaries.BT2020
+                    && colorData.transferCharacteristics == CICPTransferCharacteristics.Smpte2084)
+                {
+                    hdrFormat = HDRFormat.PQ;
+                }
+            }
+
+            return hdrFormat;
         }
 
         private byte[] TryGetMetadata(MetadataType metadataType)

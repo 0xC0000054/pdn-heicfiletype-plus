@@ -21,12 +21,15 @@ using System.Runtime.InteropServices;
 namespace HeicFileTypePlus.Interop
 {
     [StructLayout(LayoutKind.Sequential)]
-    internal sealed class ImageHandleInfo
+    internal sealed class HeifImageInfo
     {
-        public int width;
-        public int height;
-        public int bitDepth;
-        public ImageHandleColorProfileType colorProfileType;
-        public bool hasAlphaChannel;
+        public HeifColorSpace colorSpace;
+        public HeifChroma chroma;
+
+        public HeifImageInfo()
+        {
+            this.colorSpace = HeifColorSpace.Undefined;
+            this.chroma = HeifChroma.Undefined;
+        }
     }
 }

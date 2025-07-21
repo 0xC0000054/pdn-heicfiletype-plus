@@ -16,17 +16,17 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-using System.Runtime.InteropServices;
-
 namespace HeicFileTypePlus.Interop
 {
-    [StructLayout(LayoutKind.Sequential)]
-    internal sealed class ImageHandleInfo
+    internal unsafe readonly struct HeifImageChannel
     {
-        public int width;
-        public int height;
-        public int bitDepth;
-        public ImageHandleColorProfileType colorProfileType;
-        public bool hasAlphaChannel;
+        public readonly byte* scan0;
+        public readonly int stride;
+
+        public HeifImageChannel(byte* scan0, int stride)
+        {
+            this.scan0 = scan0;
+            this.stride = stride;
+        }
     }
 }

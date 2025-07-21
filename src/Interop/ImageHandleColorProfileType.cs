@@ -1,4 +1,4 @@
-// This file is part of pdn-heicfiletype-plus, a libheif-based HEIC
+﻿// This file is part of pdn-heicfiletype-plus, a libheif-based HEIC
 // FileType plugin for Paint.NET.
 //
 // Copyright (C) 2020, 2021, 2022, 2024, 2025 Nicholas Hayes
@@ -16,11 +16,12 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#pragma once
-
-#include "HeicFileTypePlusIO.h"
-
-namespace HeicDecoder
+namespace HeicFileTypePlus.Interop
 {
-    Status Decode(heif_image_handle* const imageHandle, BitmapData* const output);
+    internal enum ImageHandleColorProfileType : int
+    {
+        NotPresent = 0,
+        Icc,
+        Cicp
+    }
 }

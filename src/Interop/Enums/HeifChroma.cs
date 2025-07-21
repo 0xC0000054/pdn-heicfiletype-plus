@@ -16,17 +16,23 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-using System.Runtime.InteropServices;
 
 namespace HeicFileTypePlus.Interop
 {
-    [StructLayout(LayoutKind.Sequential)]
-    internal sealed class ImageHandleInfo
+    // These values must match the heif_chroma enumeration in heif.h.
+
+    public enum HeifChroma
     {
-        public int width;
-        public int height;
-        public int bitDepth;
-        public ImageHandleColorProfileType colorProfileType;
-        public bool hasAlphaChannel;
+        Undefined = 99,
+        Monochrome = 0,
+        Yuv420 = 1,
+        Yuv422 = 2,
+        Yuv444 = 3,
+        InterleavedRgb24 = 10,
+        InterleavedRgba32 = 11,
+        InterleavedRgb48BE = 12,
+        InterleavedRgba64BE = 13,
+        InterleavedRgb48LE = 14,
+        InterleavedRgba64LE = 15
     }
 }

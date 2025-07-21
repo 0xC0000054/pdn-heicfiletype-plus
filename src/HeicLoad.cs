@@ -16,7 +16,9 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+using HeicFileTypePlus.Decoding;
 using HeicFileTypePlus.Exif;
+using HeicFileTypePlus.ICCProfile;
 using HeicFileTypePlus.Interop;
 using PaintDotNet;
 using PaintDotNet.Imaging;
@@ -35,9 +37,9 @@ namespace HeicFileTypePlus
 
             long originalStreamPosition = input.Position;
 
-
             try
             {
+                using (IImagingFactory imagingFactory = ImagingFactory.CreateRef())
                 using (HeifFileIO fileIO = new(input, leaveOpen: true))
                 using (SafeHeifContext context = HeicNative.CreateContext())
                 {
@@ -53,10 +55,27 @@ namespace HeicFileTypePlus
 
                         surface = new Surface(primaryImageHandle.Width, primaryImageHandle.Height);
 
-                        HeicNative.DecodeImage(primaryImageHandle.SafeHeifImageHandle, surface);
+                        using (HeifImage image = primaryImageHandle.Decode(HeifColorSpace.Undefined, HeifChroma.Undefined))
+                        {
+                            switch (image.ColorSpace)
+                            {
+                                case HeifColorSpace.YCbCr:
+                                    YCbCrImageDecoder.SetImageData(imagingFactory, primaryImageHandle, surface);
+                                    break;
+                                case HeifColorSpace.Rgb:
+                                    RgbImageDecoder.SetImageData(imagingFactory, image, surface);
+                                    break;
+                                case HeifColorSpace.Monochrome:
+                                    MonochromeImageDecoder.SetImageData(imagingFactory, image, surface);
+                                    break;
+                                case HeifColorSpace.Undefined:
+                                default:
+                                    throw new FormatException("Unknown HEIF image color space.");
+                            }
+                        }
 
                         doc = new Document(surface.Width, surface.Height);
-                        AddMetadataToDocument(doc, primaryImageHandle);
+                        AddMetadataToDocument(doc, primaryImageHandle, imagingFactory);
                         doc.Layers.Add(Layer.CreateBackgroundLayer(surface, true));
                         disposeSurface = false;
                     }
@@ -94,7 +113,10 @@ namespace HeicFileTypePlus
         }
 
 
-        private static void AddMetadataToDocument(Document document, HeifImageHandle primaryImageHandle)
+        private static void AddMetadataToDocument(
+            Document document,
+            HeifImageHandle primaryImageHandle,
+            IImagingFactory imagingFactory)
         {
             byte[] exifData = primaryImageHandle.GetExif();
 
@@ -119,13 +141,56 @@ namespace HeicFileTypePlus
                 }
             }
 
-            byte[] iccProfile = primaryImageHandle.GetIccProfile();
-
-            if (iccProfile != null)
+            if (primaryImageHandle.HDRFormat != HDRFormat.None)
             {
-                document.Metadata.AddExifPropertyItem(ExifSection.Image,
-                                                      ExifPropertyKeys.Image.InterColorProfile.Path.TagID,
-                                                      new ExifValue(ExifValueType.Undefined, iccProfile));
+                using (IColorContext context = imagingFactory.CreateColorContext(KnownColorSpace.DisplayP3))
+                {
+                    document.SetColorContext(context);
+                }
+            }
+            else
+            {
+                ImageHandleColorProfileType profileType = primaryImageHandle.ColorProfileType;
+
+                if (profileType == ImageHandleColorProfileType.Icc)
+                {
+                    byte[] iccProfile = primaryImageHandle.GetIccProfile();
+
+                    if (iccProfile != null)
+                    {
+                        IColorContext colorContext = ColorContextUtil.TryCreateFromRgbProfile(iccProfile, imagingFactory);
+
+                        if (colorContext != null)
+                        {
+                            try
+                            {
+                                document.SetColorContext(colorContext);
+                            }
+                            finally
+                            {
+                                colorContext.Dispose();
+                            }
+                        }
+                    }
+                }
+                else if (profileType == ImageHandleColorProfileType.Cicp)
+                {
+                    CICPColorData colorData = primaryImageHandle.CICPColorData;
+
+                    IColorContext colorContext = ColorContextUtil.TryCreateFromCICP(colorData, imagingFactory);
+
+                    if (colorContext != null)
+                    {
+                        try
+                        {
+                            document.SetColorContext(colorContext);
+                        }
+                        finally
+                        {
+                            colorContext.Dispose();
+                        }
+                    }
+                }
             }
 
             byte[] xmpData = primaryImageHandle.GetXmp();

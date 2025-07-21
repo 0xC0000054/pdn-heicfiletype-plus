@@ -16,17 +16,38 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-using System.Runtime.InteropServices;
+using Microsoft.Win32.SafeHandles;
 
 namespace HeicFileTypePlus.Interop
 {
-    [StructLayout(LayoutKind.Sequential)]
-    internal sealed class ImageHandleInfo
+    internal abstract class SafeHeifImage : SafeHandleZeroOrMinusOneIsInvalid
     {
-        public int width;
-        public int height;
-        public int bitDepth;
-        public ImageHandleColorProfileType colorProfileType;
-        public bool hasAlphaChannel;
+        protected SafeHeifImage(bool owns) : base(owns)
+        {
+        }
+    }
+
+    internal sealed class SafeHeifImageX64 : SafeHeifImage
+    {
+        public SafeHeifImageX64() : base(true)
+        {
+        }
+
+        protected override bool ReleaseHandle()
+        {
+            return HeicIO_x64.DeleteImage(this.handle);
+        }
+    }
+
+    internal sealed class SafeHeifImageARM64 : SafeHeifImage
+    {
+        public SafeHeifImageARM64() : base(true)
+        {
+        }
+
+        protected override bool ReleaseHandle()
+        {
+            return HeicIO_ARM64.DeleteImage(this.handle);
+        }
     }
 }

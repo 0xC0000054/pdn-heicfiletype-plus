@@ -152,35 +152,85 @@ namespace HeicFileTypePlus
             return imageHandle;
         }
 
-        internal static unsafe void DecodeImage(SafeHeifImageHandle imageHandle, Surface surface)
+        internal static unsafe HeifImage DecodeImage(IHeifImageHandle imageHandle, HeifColorSpace colorSpace, HeifChroma chroma)
         {
-            BitmapData bitmapData = new()
-            {
-                scan0 = (byte*)surface.Scan0.VoidStar,
-                width = surface.Width,
-                height = surface.Height,
-                stride = surface.Stride
-            };
-
-            Status status;
+            SafeHeifImage safeHeifImage = null;
+            HeifImageInfo info = new();
 
             if (RuntimeInformation.ProcessArchitecture == Architecture.X64)
             {
-                status = HeicIO_x64.DecodeImage(imageHandle, ref bitmapData);
+                Status status = HeicIO_x64.DecodeImage(imageHandle.SafeHeifImageHandle,
+                                                       colorSpace,
+                                                       chroma,
+                                                       out SafeHeifImageX64 safeImage,
+                                                       info);
+
+                if (status == Status.Ok)
+                {
+                    safeHeifImage = safeImage;
+                }
+                else
+                {
+                    HandleReadError(status);
+                }
             }
             else if (RuntimeInformation.ProcessArchitecture == Architecture.Arm64)
             {
-                status = HeicIO_ARM64.DecodeImage(imageHandle, ref bitmapData);
+                Status status = HeicIO_ARM64.DecodeImage(imageHandle.SafeHeifImageHandle,
+                                                         colorSpace,
+                                                         chroma,
+                                                         out SafeHeifImageARM64 safeImage,
+                                                         info);
+
+                if (status == Status.Ok)
+                {
+                    safeHeifImage = safeImage;
+                }
+                else
+                {
+                    HandleReadError(status);
+                }
             }
             else
             {
                 throw new PlatformNotSupportedException();
             }
 
-            if (status != Status.Ok)
+            HeifImage image = null;
+
+            try
             {
-                HandleReadError(status);
+                image = new(imageHandle,
+                            safeHeifImage,
+                            info);
+                safeHeifImage = null;
             }
+            finally
+            {
+                safeHeifImage?.Dispose();
+            }
+
+            return image;
+        }
+
+        internal static unsafe byte* GetHeifImageChannel(SafeHeifImage image, HeifChannel channel, out int stride)
+        {
+            byte* scan0;
+
+            if (RuntimeInformation.ProcessArchitecture == Architecture.X64)
+            {
+                scan0 = HeicIO_x64.GetHeifImageChannel(image, channel, out stride);
+            }
+            else if (RuntimeInformation.ProcessArchitecture == Architecture.Arm64)
+            {
+                scan0 = HeicIO_ARM64.GetHeifImageChannel(image, channel, out stride);
+            }
+            else
+            {
+                throw new PlatformNotSupportedException();
+            }
+
+            return scan0;
         }
 
         internal static nuint GetICCProfileSize(SafeHeifImageHandle imageHandle)
@@ -220,6 +270,29 @@ namespace HeicFileTypePlus
             else if (RuntimeInformation.ProcessArchitecture == Architecture.Arm64)
             {
                 status = HeicIO_ARM64.GetICCProfile(imageHandle, buffer, (uint)buffer.Length);
+            }
+            else
+            {
+                throw new PlatformNotSupportedException();
+            }
+
+            if (status != Status.Ok)
+            {
+                HandleReadError(status);
+            }
+        }
+
+        internal static void GetCICPColorData(SafeHeifImageHandle imageHandle, out CICPColorData colorData)
+        {
+            Status status;
+
+            if (RuntimeInformation.ProcessArchitecture == Architecture.X64)
+            {
+                status = HeicIO_x64.GetCICPColorData(imageHandle, out colorData);
+            }
+            else if (RuntimeInformation.ProcessArchitecture == Architecture.Arm64)
+            {
+                status = HeicIO_ARM64.GetCICPColorData(imageHandle, out colorData);
             }
             else
             {

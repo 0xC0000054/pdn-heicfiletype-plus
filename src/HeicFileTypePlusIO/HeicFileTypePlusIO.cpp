@@ -20,7 +20,6 @@
 //
 
 #include "HeicFileTypePlusIO.h"
-#include "HeicDecoder.h"
 #include "HeicEncoder.h"
 #include "HeicMetadata.h"
 #include "HeicReader.h"
@@ -50,6 +49,13 @@ bool __stdcall DeleteContext(heif_context* context)
 bool __stdcall DeleteImageHandle(heif_image_handle* handle)
 {
     heif_image_handle_release(handle);
+
+    return true;
+}
+
+bool __stdcall DeleteImage(heif_image* handle)
+{
+    heif_image_release(handle);
 
     return true;
 }
@@ -101,34 +107,68 @@ Status __stdcall GetPrimaryImage(
 
     info->width = heif_image_handle_get_width(*primaryImageHandle);
     info->height = heif_image_handle_get_height(*primaryImageHandle);
+    info->bitDepth = heif_image_handle_get_luma_bits_per_pixel(*primaryImageHandle);
 
-    heif_color_profile_nclx* nclxProfile;
-
-    error = heif_image_handle_get_nclx_color_profile(*primaryImageHandle, &nclxProfile);
-
-    if (error.code == heif_error_Ok)
+    switch (heif_image_handle_get_color_profile_type(*primaryImageHandle))
     {
-        info->cicp.colorPrimaries = nclxProfile->color_primaries;
-        info->cicp.transferCharacteristics = nclxProfile->transfer_characteristics;
-        info->cicp.matrixCoefficients = nclxProfile->matrix_coefficients;
-        info->cicp.fullRange = nclxProfile->full_range_flag != 0;
+    case heif_color_profile_type_prof:
+    case heif_color_profile_type_rICC:
+        info->colorProfileType = ImageHandleColorProfileType::Icc;
+        break;
+    case heif_color_profile_type_nclx:
+        info->colorProfileType = ImageHandleColorProfileType::Cicp;
+        break;
+    case heif_color_profile_type_not_present:
+    default:
+        info->colorProfileType = ImageHandleColorProfileType::NotPresent;
+        break;
+    }
 
-        heif_nclx_color_profile_free(nclxProfile);
-    }
-    else
-    {
-        info->cicp.colorPrimaries = heif_color_primaries_unspecified;
-        info->cicp.transferCharacteristics = heif_transfer_characteristic_unspecified;
-        info->cicp.matrixCoefficients = heif_matrix_coefficients_unspecified;
-        info->cicp.fullRange = false;
-    }
+    info->hasAlpha = heif_image_handle_has_alpha_channel(*primaryImageHandle);
 
     return Status::Ok;
 }
 
-Status __stdcall DecodeImage(heif_image_handle* imageHandle, BitmapData* output)
+Status __stdcall DecodeImage(
+    heif_image_handle* const imageHandle,
+    heif_colorspace colorSpace,
+    heif_chroma chroma,
+    heif_image** outputImage,
+    DecodedImageInfo* info)
 {
-    return HeicDecoder::Decode(imageHandle, output);
+    if (!imageHandle || !outputImage || !info)
+    {
+        return Status::NullParameter;
+    }
+
+    ScopedHeifDecodingOptions options(heif_decoding_options_alloc());
+
+    if (!options)
+    {
+        return Status::OutOfMemory;
+    }
+
+    heif_error error = heif_decode_image(imageHandle, outputImage, colorSpace, chroma, options.get());
+
+    if (error.code != heif_error_Ok)
+    {
+        switch (error.code)
+        {
+        case heif_error_Memory_allocation_error:
+            return Status::OutOfMemory;
+        default:
+            return Status::DecodeFailed;
+        }
+    }
+
+    info->colorSpace = heif_image_get_colorspace(*outputImage);
+    info->chroma = heif_image_get_chroma_format(*outputImage);
+    return Status::Ok;
+}
+
+uint8_t* __stdcall GetHeifImageChannel(heif_image* image, heif_channel channel, int* channelStride)
+{
+    return heif_image_get_plane(image, channel, channelStride);
 }
 
 Status __stdcall GetICCProfileSize(heif_image_handle* imageHandle, size_t* size)
@@ -158,6 +198,47 @@ Status __stdcall GetICCProfile(heif_image_handle* imageHandle, uint8_t* buffer, 
     heif_error error = heif_image_handle_get_raw_color_profile(imageHandle, buffer);
 
     if (error.code != heif_error_Ok)
+    {
+        switch (error.code)
+        {
+        case heif_error_Memory_allocation_error:
+            return Status::OutOfMemory;
+        default:
+            return Status::ColorInformationError;
+        }
+    }
+
+    return Status::Ok;
+}
+
+Status __stdcall GetCICPColorData(heif_image_handle* imageHandle, CICPColorData* data)
+{
+    if (!imageHandle || !data)
+    {
+        return Status::NullParameter;
+    }
+
+    heif_color_profile_nclx* nclxProfile;
+
+    heif_error error = heif_image_handle_get_nclx_color_profile(imageHandle, &nclxProfile);
+
+    if (error.code == heif_error_Ok)
+    {
+        data->colorPrimaries = nclxProfile->color_primaries;
+        data->transferCharacteristics = nclxProfile->transfer_characteristics;
+        data->matrixCoefficients = nclxProfile->matrix_coefficients;
+        data->fullRange = nclxProfile->full_range_flag;
+
+        heif_nclx_color_profile_free(nclxProfile);
+    }
+    else if (error.code == heif_error_Color_profile_does_not_exist)
+    {
+        data->colorPrimaries = heif_color_primaries_unspecified;
+        data->transferCharacteristics = heif_transfer_characteristic_unspecified;
+        data->matrixCoefficients = heif_matrix_coefficients_unspecified;
+        data->fullRange = false;
+    }
+    else
     {
         switch (error.code)
         {

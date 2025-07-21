@@ -27,9 +27,6 @@
     <ClInclude Include="scoped.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="HeicDecoder.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="HeicMetadata.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -57,9 +54,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="HeicReader.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="HeicDecoder.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="HeicMetadata.cpp">

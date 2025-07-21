@@ -37,6 +37,10 @@ namespace HeicFileTypePlus.Interop
         internal static extern bool DeleteImageHandle(IntPtr handle);
 
         [DllImport(DllName, CallingConvention = CallingConvention.StdCall)]
+        [return: MarshalAs(UnmanagedType.U1)]
+        internal static extern bool DeleteImage(IntPtr handle);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.StdCall)]
         internal static extern Status LoadFileIntoContext(
             SafeHeifContext context,
             SafeHandle callbacks,
@@ -49,13 +53,23 @@ namespace HeicFileTypePlus.Interop
                                                       [MarshalAs(UnmanagedType.FunctionPtr)] HeicErrorDetailsCopy copyErrorDetails);
 
         [DllImport(DllName, CallingConvention = CallingConvention.StdCall)]
-        internal static extern Status DecodeImage(SafeHeifImageHandle imageHandle, [In] ref BitmapData bitmapData);
+        internal static extern Status DecodeImage(SafeHeifImageHandle imageHandle,
+                                                  HeifColorSpace colorSpace,
+                                                  HeifChroma chroma,
+                                                  out SafeHeifImageX64 outImage,
+                                                  [In, Out] HeifImageInfo info);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.StdCall)]
+        internal static extern unsafe byte* GetHeifImageChannel(SafeHeifImage image, HeifChannel channel, out int stride);
 
         [DllImport(DllName, CallingConvention = CallingConvention.StdCall)]
         internal static extern Status GetICCProfileSize(SafeHeifImageHandle imageHandle, out nuint size);
 
         [DllImport(DllName, CallingConvention = CallingConvention.StdCall)]
         internal static extern Status GetICCProfile(SafeHeifImageHandle imageHandle, byte[] buffer, nuint bufferSize);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.StdCall)]
+        internal static extern Status GetCICPColorData(SafeHeifImageHandle imageHandle, out CICPColorData colorData);
 
         [DllImport(DllName, CallingConvention = CallingConvention.StdCall)]
         internal static extern Status GetMetadataId(SafeHeifImageHandle imageHandle, MetadataType type, out uint id);
