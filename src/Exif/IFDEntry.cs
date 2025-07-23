@@ -19,8 +19,6 @@
 using PaintDotNet.Imaging;
 using System;
 
-#nullable enable
-
 namespace HeicFileTypePlus.Exif
 {
     internal readonly struct IFDEntry : IEquatable<IFDEntry>

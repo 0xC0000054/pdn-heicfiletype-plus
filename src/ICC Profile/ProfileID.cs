@@ -39,9 +39,9 @@ namespace HeicFileTypePlus.ICCProfile
 
         public bool IsEmpty => this.profileID == 0;
 
-        public override bool Equals(object obj) => Equals(obj as ProfileID);
+        public override bool Equals(object? obj) => Equals(obj as ProfileID);
 
-        public bool Equals(ProfileID other) => other is not null && this.profileID.Equals(other.profileID);
+        public bool Equals(ProfileID? other) => other is not null && this.profileID.Equals(other.profileID);
 
         public override int GetHashCode() => unchecked(1584140826 + this.profileID.GetHashCode());
 

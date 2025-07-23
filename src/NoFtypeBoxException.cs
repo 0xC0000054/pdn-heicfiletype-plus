@@ -18,8 +18,6 @@
 
 using System;
 
-#nullable enable
-
 namespace HeicFileTypePlus
 {
     internal sealed class NoFtypeBoxException : Exception

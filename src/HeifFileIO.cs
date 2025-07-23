@@ -81,7 +81,7 @@ namespace HeicFileTypePlus
             }
         }
 
-        public ExceptionDispatchInfo CallbackExceptionInfo
+        public ExceptionDispatchInfo? CallbackExceptionInfo
         {
             get;
             private set;
@@ -91,20 +91,12 @@ namespace HeicFileTypePlus
         {
             if (disposing)
             {
-                if (this.ioCallbacksHandle != null)
-                {
-                    this.ioCallbacksHandle.Dispose();
-                    this.ioCallbacksHandle = null;
-                }
+                this.ioCallbacksHandle?.Dispose();
 
-                if (this.stream != null)
+                if (!this.leaveOpen)
                 {
-                    if (!this.leaveOpen)
-                    {
-                        this.stream.Dispose();
-                    }
-                    this.stream = null;
-                }
+                    this.stream.Dispose();
+                }                
             }
 
             base.Dispose(disposing);

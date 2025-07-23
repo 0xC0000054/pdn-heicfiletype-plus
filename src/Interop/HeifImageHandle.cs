@@ -69,14 +69,14 @@ namespace HeicFileTypePlus.Interop
             return HeicNative.DecodeImage(this, colorSpace, chroma);
         }
 
-        public byte[] GetExif()
+        public byte[]? GetExif()
         {
             return TryGetMetadata(MetadataType.Exif);
         }
 
-        public byte[] GetIccProfile()
+        public byte[]? GetIccProfile()
         {
-            byte[] profileBytes = null;
+            byte[]? profileBytes = null;
 
             if (!this.IsDisposed && this.ColorProfileType == ImageHandleColorProfileType.Icc)
             {
@@ -93,7 +93,7 @@ namespace HeicFileTypePlus.Interop
             return profileBytes;
         }
 
-        public byte[] GetXmp()
+        public byte[]? GetXmp()
         {
             return TryGetMetadata(MetadataType.Xmp);
         }
@@ -149,9 +149,9 @@ namespace HeicFileTypePlus.Interop
             return hdrFormat;
         }
 
-        private byte[] TryGetMetadata(MetadataType metadataType)
+        private byte[]? TryGetMetadata(MetadataType metadataType)
         {
-            byte[] data = null;
+            byte[]? data = null;
 
             if (!this.IsDisposed)
             {

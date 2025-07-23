@@ -112,11 +112,11 @@ namespace HeicFileTypePlus
 
         private static EncoderMetadata CreateEncoderMetadata(Document doc)
         {
-            byte[] iccProfileBytes = null;
-            byte[] exifBytes = null;
-            byte[] xmpBytes = null;
+            byte[]? iccProfileBytes = null;
+            byte[]? exifBytes = null;
+            byte[]? xmpBytes = null;
 
-            Dictionary<ExifPropertyPath, ExifValue> exifMetadata = GetExifMetadataFromDocument(doc);
+            Dictionary<ExifPropertyPath, ExifValue>? exifMetadata = GetExifMetadataFromDocument(doc);
 
             if (exifMetadata != null)
             {
@@ -124,7 +124,7 @@ namespace HeicFileTypePlus
 
                 ExifPropertyPath iccProfileKey = ExifPropertyKeys.Image.InterColorProfile.Path;
 
-                if (exifMetadata.TryGetValue(iccProfileKey, out ExifValue iccProfileItem))
+                if (exifMetadata.TryGetValue(iccProfileKey, out ExifValue? iccProfileItem))
                 {
                     iccProfileBytes = [.. iccProfileItem.Data];
                     exifMetadata.Remove(iccProfileKey);
@@ -134,7 +134,7 @@ namespace HeicFileTypePlus
                 exifBytes = new ExifWriter(doc, exifMetadata, exifColorSpace).CreateExifBlob();
             }
 
-            XmpPacket xmpPacket = doc.Metadata.TryGetXmpPacket();
+            XmpPacket? xmpPacket = doc.Metadata.TryGetXmpPacket();
             if (xmpPacket != null)
             {
                 string packetAsString = xmpPacket.ToString(XmpPacketWrapperType.ReadOnly);
@@ -145,9 +145,9 @@ namespace HeicFileTypePlus
             return new EncoderMetadata(iccProfileBytes, exifBytes, xmpBytes);
         }
 
-        private static Dictionary<ExifPropertyPath, ExifValue> GetExifMetadataFromDocument(Document doc)
+        private static Dictionary<ExifPropertyPath, ExifValue>? GetExifMetadataFromDocument(Document doc)
         {
-            Dictionary<ExifPropertyPath, ExifValue> items = null;
+            Dictionary<ExifPropertyPath, ExifValue>? items = null;
 
             Metadata metadata = doc.Metadata;
             ExifPropertyItem[] exifProperties = metadata.GetExifPropertyItems();

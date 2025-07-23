@@ -19,8 +19,6 @@
 using System;
 using System.Text;
 
-#nullable enable
-
 namespace HeicFileTypePlus
 {
     internal static class VersionInfo

@@ -25,8 +25,6 @@ using System.IO;
 using System.Runtime.CompilerServices;
 using System.Text;
 
-#nullable enable
-
 namespace HeicFileTypePlus.Exif
 {
     internal static class ExifParser

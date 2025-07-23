@@ -25,9 +25,9 @@ namespace HeicFileTypePlus
 {
     internal static class ColorContextUtil
     {
-        public static IColorContext TryCreateFromCICP(CICPColorData colorData, IImagingFactory imagingFactory)
+        public static IColorContext? TryCreateFromCICP(CICPColorData colorData, IImagingFactory imagingFactory)
         {
-            IColorContext colorContext = null;
+            IColorContext? colorContext = null;
 
             if (colorData.colorPrimaries == CICPColorPrimaries.BT709)
             {
@@ -53,9 +53,9 @@ namespace HeicFileTypePlus
             return colorContext;
         }
 
-        public static IColorContext TryCreateFromRgbProfile(ReadOnlySpan<byte> profileBytes, IImagingFactory imagingFactory)
+        public static IColorContext? TryCreateFromRgbProfile(ReadOnlySpan<byte> profileBytes, IImagingFactory imagingFactory)
         {
-            IColorContext colorContext = null;
+            IColorContext? colorContext = null;
 
             if (profileBytes.Length > ProfileHeader.SizeOf
                 && new ProfileHeader(profileBytes).ColorSpace == ProfileColorSpace.Rgb)

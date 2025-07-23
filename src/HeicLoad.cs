@@ -32,7 +32,7 @@ namespace HeicFileTypePlus
     {
         public static Document Load(Stream input)
         {
-            Document doc = null;
+            Document? doc = null;
 
             long originalStreamPosition = input.Position;
 
@@ -44,8 +44,8 @@ namespace HeicFileTypePlus
                 {
                     HeicNative.LoadFileIntoContext(context, fileIO);
 
-                    HeifImageHandle primaryImageHandle = null;
-                    Surface surface = null;
+                    HeifImageHandle? primaryImageHandle = null;
+                    Surface? surface = null;
                     bool disposeSurface = true;
 
                     try
@@ -117,11 +117,11 @@ namespace HeicFileTypePlus
             HeifImageHandle primaryImageHandle,
             IImagingFactory imagingFactory)
         {
-            byte[] exifData = primaryImageHandle.GetExif();
+            byte[]? exifData = primaryImageHandle.GetExif();
 
             if (exifData != null)
             {
-                ExifValueCollection metadataEntries = TryParseExifData(exifData);
+                ExifValueCollection? metadataEntries = TryParseExifData(exifData);
 
                 if (metadataEntries != null)
                 {
@@ -153,11 +153,11 @@ namespace HeicFileTypePlus
 
                 if (profileType == ImageHandleColorProfileType.Icc)
                 {
-                    byte[] iccProfile = primaryImageHandle.GetIccProfile();
+                    byte[]? iccProfile = primaryImageHandle.GetIccProfile();
 
                     if (iccProfile != null)
                     {
-                        IColorContext colorContext = ColorContextUtil.TryCreateFromRgbProfile(iccProfile, imagingFactory);
+                        IColorContext? colorContext = ColorContextUtil.TryCreateFromRgbProfile(iccProfile, imagingFactory);
 
                         if (colorContext != null)
                         {
@@ -176,7 +176,7 @@ namespace HeicFileTypePlus
                 {
                     CICPColorData colorData = primaryImageHandle.CICPColorData;
 
-                    IColorContext colorContext = ColorContextUtil.TryCreateFromCICP(colorData, imagingFactory);
+                    IColorContext? colorContext = ColorContextUtil.TryCreateFromCICP(colorData, imagingFactory);
 
                     if (colorContext != null)
                     {
@@ -192,11 +192,11 @@ namespace HeicFileTypePlus
                 }
             }
 
-            byte[] xmpData = primaryImageHandle.GetXmp();
+            byte[]? xmpData = primaryImageHandle.GetXmp();
 
             if (xmpData != null)
             {
-                XmpPacket packet = XmpPacket.TryParse(xmpData);
+                XmpPacket? packet = XmpPacket.TryParse(xmpData);
 
                 if (packet != null)
                 {
@@ -205,14 +205,14 @@ namespace HeicFileTypePlus
             }
         }
 
-        private static ExifValueCollection TryParseExifData(byte[] exifData)
+        private static ExifValueCollection? TryParseExifData(byte[] exifData)
         {
             if (exifData is null)
             {
                 return null;
             }
 
-            ExifValueCollection metadataEntries = null;
+            ExifValueCollection? metadataEntries = null;
 
             // The EXIF data block has a header that indicates the number of bytes
             // that come before the start of the TIFF header.

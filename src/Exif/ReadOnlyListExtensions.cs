@@ -27,7 +27,7 @@ namespace HeicFileTypePlus.Exif
         {
             ArgumentNullException.ThrowIfNull(items, nameof(items));
 
-            T[] asArray = items as T[];
+            T[]? asArray = items as T[];
 
             if (asArray is not null)
             {

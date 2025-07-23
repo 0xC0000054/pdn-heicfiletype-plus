@@ -47,7 +47,7 @@ namespace HeicFileTypePlus.ICCProfile
 
         public ushort Second { get; }
 
-        public override bool Equals(object obj) => obj is ProfileDateTime other && Equals(other);
+        public override bool Equals(object? obj) => obj is ProfileDateTime other && Equals(other);
 
         public bool Equals(ProfileDateTime other) => this.Year == other.Year &&
                                                      this.Month == other.Month &&

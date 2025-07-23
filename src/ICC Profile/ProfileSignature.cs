@@ -30,7 +30,7 @@ namespace HeicFileTypePlus.ICCProfile
 
         public uint Value { get; }
 
-        public override bool Equals(object obj) => obj is ProfileSignature other && Equals(other);
+        public override bool Equals(object? obj) => obj is ProfileSignature other && Equals(other);
 
         public bool Equals(ProfileSignature other) => this.Value == other.Value;
 

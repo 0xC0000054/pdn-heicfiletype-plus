@@ -41,7 +41,7 @@ namespace HeicFileTypePlus.ICCProfile.Numeric
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private string DebuggerDisplay => ToString(NumberFormatInfo.InvariantInfo);
 
-        public override bool Equals(object obj) => obj is S15Fixed16 other && Equals(other);
+        public override bool Equals(object? obj) => obj is S15Fixed16 other && Equals(other);
 
         public bool Equals(S15Fixed16 other) => this.fixedValue == other.fixedValue;
 
@@ -53,7 +53,7 @@ namespace HeicFileTypePlus.ICCProfile.Numeric
 
         public string ToString(IFormatProvider formatProvider) => ToString("G", formatProvider);
 
-        public string ToString(string format, IFormatProvider formatProvider)
+        public string ToString(string? format, IFormatProvider? formatProvider)
             => ToFloat().ToString(format, formatProvider);
 
         public static bool operator ==(S15Fixed16 left, S15Fixed16 right) => left.Equals(right);

@@ -19,8 +19,6 @@
 using System;
 using System.IO;
 
-#nullable enable
-
 namespace HeicFileTypePlus
 {
     internal static class FormatDetection

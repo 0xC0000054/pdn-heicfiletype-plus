@@ -62,7 +62,7 @@ namespace HeicFileTypePlus.Decoding
             using (IColorContext dp3ColorContext = imagingFactory.CreateColorContext(KnownColorSpace.DisplayP3))
             using (IDirect2DFactory d2dFactory = Direct2DFactory.Create())
             {
-                IBitmapSource convertedInput = null;
+                IBitmapSource? convertedInput = null;
 
                 try
                 {

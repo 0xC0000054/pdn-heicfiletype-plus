@@ -144,7 +144,7 @@ namespace HeicFileTypePlus.Interop
 
         public object MarshalNativeToManaged(IntPtr pNativeData)
         {
-            return null;
+            return null!;
         }
     }
 }

@@ -93,7 +93,7 @@ namespace HeicFileTypePlus
 
         internal static unsafe HeifImageHandle GetPrimaryImage(SafeHeifContext context)
         {
-            SafeHeifImageHandle primaryImageHandle = null;
+            SafeHeifImageHandle? primaryImageHandle = null;
             ImageHandleInfo info = new();
 
             HeicErrorDetails errorDetails = new();
@@ -137,11 +137,11 @@ namespace HeicFileTypePlus
             }
             GC.KeepAlive(copyErrorDetailsCallback);
 
-            HeifImageHandle imageHandle = null;
+            HeifImageHandle? imageHandle = null;
 
             try
             {
-                imageHandle = new(primaryImageHandle, info);
+                imageHandle = new(primaryImageHandle!, info);
                 primaryImageHandle = null;
             }
             finally
@@ -154,7 +154,7 @@ namespace HeicFileTypePlus
 
         internal static unsafe HeifImage DecodeImage(IHeifImageHandle imageHandle, HeifColorSpace colorSpace, HeifChroma chroma)
         {
-            SafeHeifImage safeHeifImage = null;
+            SafeHeifImage? safeHeifImage = null;
             HeifImageInfo info = new();
 
             if (RuntimeInformation.ProcessArchitecture == Architecture.X64)
@@ -196,12 +196,12 @@ namespace HeicFileTypePlus
                 throw new PlatformNotSupportedException();
             }
 
-            HeifImage image = null;
+            HeifImage? image = null;
 
             try
             {
                 image = new(imageHandle,
-                            safeHeifImage,
+                            safeHeifImage!,
                             info);
                 safeHeifImage = null;
             }
@@ -483,7 +483,7 @@ namespace HeicFileTypePlus
             return result;
         }
 
-        private static void HandleReadError(Status status, string errorDetails = null)
+        private static void HandleReadError(Status status, string? errorDetails = null)
         {
             switch (status)
             {

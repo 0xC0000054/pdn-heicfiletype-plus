@@ -26,7 +26,7 @@ namespace HeicFileTypePlus.Interop
 
     internal sealed class HeicErrorDetails
     {
-        internal string Message { get; private set; }
+        internal string? Message { get; private set; }
 
         internal unsafe void Copy(sbyte* message)
         {

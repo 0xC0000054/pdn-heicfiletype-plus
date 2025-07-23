@@ -124,14 +124,14 @@ namespace HeicFileTypePlus
         {
             ControlInfo configUI = CreateDefaultSaveConfigUI(props);
 
-            PropertyControlInfo chromaSubsamplingInfo = configUI.FindControlForPropertyName(PropertyNames.YUVChromaSubsampling);
-            chromaSubsamplingInfo.ControlProperties[ControlInfoPropertyNames.DisplayName].Value = "Chroma Subsampling";
+            PropertyControlInfo chromaSubsamplingInfo = configUI.FindControlForPropertyName(PropertyNames.YUVChromaSubsampling)!;
+            chromaSubsamplingInfo.ControlProperties[ControlInfoPropertyNames.DisplayName]!.Value = "Chroma Subsampling";
             chromaSubsamplingInfo.SetValueDisplayName(YUVChromaSubsampling.Subsampling420, "4:2:0 (Best Compression)");
             chromaSubsamplingInfo.SetValueDisplayName(YUVChromaSubsampling.Subsampling422, "4:2:2");
             chromaSubsamplingInfo.SetValueDisplayName(YUVChromaSubsampling.Subsampling444, "4:4:4 (Best Quality)");
 
-            PropertyControlInfo presetInfo = configUI.FindControlForPropertyName(PropertyNames.Preset);
-            presetInfo.ControlProperties[ControlInfoPropertyNames.DisplayName].Value = "Encoding Speed / Quality";
+            PropertyControlInfo presetInfo = configUI.FindControlForPropertyName(PropertyNames.Preset)!;
+            presetInfo.ControlProperties[ControlInfoPropertyNames.DisplayName]!.Value = "Encoding Speed / Quality";
             presetInfo.SetValueDisplayName(EncoderPreset.SuperFast, "Super Fast");
             presetInfo.SetValueDisplayName(EncoderPreset.VeryFast, "Very Fast");
             presetInfo.SetValueDisplayName(EncoderPreset.Faster, "Faster");
@@ -144,8 +144,8 @@ namespace HeicFileTypePlus
 
             configUI.SetPropertyControlValue(PropertyNames.Quality, ControlInfoPropertyNames.DisplayName, "Quality");
 
-            PropertyControlInfo tuningInfo = configUI.FindControlForPropertyName(PropertyNames.Tuning);
-            tuningInfo.ControlProperties[ControlInfoPropertyNames.DisplayName].Value = "Tuning";
+            PropertyControlInfo tuningInfo = configUI.FindControlForPropertyName(PropertyNames.Tuning)!;
+            tuningInfo.ControlProperties[ControlInfoPropertyNames.DisplayName]!.Value = "Tuning";
             tuningInfo.SetValueDisplayName(EncoderTuning.None, "None");
             tuningInfo.SetValueDisplayName(EncoderTuning.PSNR, "PSNR");
             tuningInfo.SetValueDisplayName(EncoderTuning.SSIM, "SSIM");
@@ -154,23 +154,23 @@ namespace HeicFileTypePlus
 
             configUI.SetPropertyControlValue(PropertyNames.TUIntraDepth, ControlInfoPropertyNames.DisplayName, "TU Intra Depth");
 
-            PropertyControlInfo forumLinkInfo = configUI.FindControlForPropertyName(PropertyNames.ForumLink);
-            forumLinkInfo.ControlProperties[ControlInfoPropertyNames.DisplayName].Value = "More Info";
-            forumLinkInfo.ControlProperties[ControlInfoPropertyNames.Description].Value = "Forum Discussion";
+            PropertyControlInfo forumLinkInfo = configUI.FindControlForPropertyName(PropertyNames.ForumLink)!;
+            forumLinkInfo.ControlProperties[ControlInfoPropertyNames.DisplayName]!.Value = "More Info";
+            forumLinkInfo.ControlProperties[ControlInfoPropertyNames.Description]!.Value = "Forum Discussion";
 
-            PropertyControlInfo githubLinkInfo = configUI.FindControlForPropertyName(PropertyNames.GitHubLink);
-            githubLinkInfo.ControlProperties[ControlInfoPropertyNames.DisplayName].Value = string.Empty;
-            githubLinkInfo.ControlProperties[ControlInfoPropertyNames.Description].Value = "GitHub"; // GitHub is a brand name that should not be localized.
+            PropertyControlInfo githubLinkInfo = configUI.FindControlForPropertyName(PropertyNames.GitHubLink)!;
+            githubLinkInfo.ControlProperties[ControlInfoPropertyNames.DisplayName]!.Value = string.Empty;
+            githubLinkInfo.ControlProperties[ControlInfoPropertyNames.Description]!.Value = "GitHub"; // GitHub is a brand name that should not be localized.
 
-            PropertyControlInfo pluginVersionInfo = configUI.FindControlForPropertyName(PropertyNames.PluginVersion);
+            PropertyControlInfo pluginVersionInfo = configUI.FindControlForPropertyName(PropertyNames.PluginVersion)!;
             pluginVersionInfo.ControlType.Value = PropertyControlType.Label;
-            pluginVersionInfo.ControlProperties[ControlInfoPropertyNames.DisplayName].Value = string.Empty;
-            pluginVersionInfo.ControlProperties[ControlInfoPropertyNames.Description].Value = VersionInfo.PluginVersion;
+            pluginVersionInfo.ControlProperties[ControlInfoPropertyNames.DisplayName]!.Value = string.Empty;
+            pluginVersionInfo.ControlProperties[ControlInfoPropertyNames.Description]!.Value = VersionInfo.PluginVersion;
 
-            PropertyControlInfo libheifVersionInfo = configUI.FindControlForPropertyName(PropertyNames.LibHeifVersion);
+            PropertyControlInfo libheifVersionInfo = configUI.FindControlForPropertyName(PropertyNames.LibHeifVersion)!;
             libheifVersionInfo.ControlType.Value = PropertyControlType.Label;
-            libheifVersionInfo.ControlProperties[ControlInfoPropertyNames.DisplayName].Value = string.Empty;
-            libheifVersionInfo.ControlProperties[ControlInfoPropertyNames.Description].Value = VersionInfo.LibHeifVersion;
+            libheifVersionInfo.ControlProperties[ControlInfoPropertyNames.DisplayName]!.Value = string.Empty;
+            libheifVersionInfo.ControlProperties[ControlInfoPropertyNames.Description]!.Value = VersionInfo.LibHeifVersion;
 
             return configUI;
         }
@@ -180,11 +180,11 @@ namespace HeicFileTypePlus
         /// </summary>
         protected override void OnSaveT(Document input, Stream output, PropertyBasedSaveConfigToken token, Surface scratchSurface, ProgressEventHandler progressCallback)
         {
-            int quality = token.GetProperty<Int32Property>(PropertyNames.Quality).Value;
-            YUVChromaSubsampling chromaSubsampling = (YUVChromaSubsampling)token.GetProperty(PropertyNames.YUVChromaSubsampling).Value;
-            EncoderPreset preset = (EncoderPreset)token.GetProperty(PropertyNames.Preset).Value;
-            EncoderTuning tuning = (EncoderTuning)token.GetProperty(PropertyNames.Tuning).Value;
-            int tuIntraDepth = token.GetProperty<Int32Property>(PropertyNames.TUIntraDepth).Value;
+            int quality = token.GetProperty<Int32Property>(PropertyNames.Quality)!.Value;
+            YUVChromaSubsampling chromaSubsampling = (YUVChromaSubsampling)token.GetProperty(PropertyNames.YUVChromaSubsampling)!.Value!;
+            EncoderPreset preset = (EncoderPreset)token.GetProperty(PropertyNames.Preset)!.Value!;
+            EncoderTuning tuning = (EncoderTuning)token.GetProperty(PropertyNames.Tuning)!.Value!;
+            int tuIntraDepth = token.GetProperty<Int32Property>(PropertyNames.TUIntraDepth)!.Value;
 
             HeicSave.Save(input, output, scratchSurface, quality, chromaSubsampling, preset, tuning, tuIntraDepth, progressCallback);
         }

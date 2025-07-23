@@ -20,11 +20,11 @@ namespace HeicFileTypePlus.Interop
 {
     internal sealed class EncoderMetadata
     {
-        public byte[] iccProfile;
-        public byte[] exif;
-        public byte[] xmp;
+        public byte[]? iccProfile;
+        public byte[]? exif;
+        public byte[]? xmp;
 
-        public EncoderMetadata(byte[] iccProfile, byte[] exif, byte[] xmp)
+        public EncoderMetadata(byte[]? iccProfile, byte[]? exif, byte[]? xmp)
         {
             this.iccProfile = iccProfile;
             this.exif = exif;

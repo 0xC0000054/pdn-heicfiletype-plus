@@ -36,7 +36,7 @@ namespace HeicFileTypePlus.ICCProfile
 
         public uint Fix => LowNibble(this.packedVersion >> 16);
 
-        public override bool Equals(object obj) => obj is ProfileVersion other && Equals(other);
+        public override bool Equals(object? obj) => obj is ProfileVersion other && Equals(other);
 
         public bool Equals(ProfileVersion other) => this.packedVersion == other.packedVersion;
 

@@ -7,6 +7,7 @@
     <UseWPF>true</UseWPF>
     <ImportWindowsDesktopTargets>true</ImportWindowsDesktopTargets>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <Nullable>enable</Nullable>
   </PropertyGroup>
   <ItemGroup>
     <Compile Remove="ARM64\**" />

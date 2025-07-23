@@ -38,7 +38,7 @@ namespace HeicFileTypePlus.ICCProfile.Numeric
 
         public S15Fixed16 Z { get; }
 
-        public override bool Equals(object obj) => obj is XYZNumber other && Equals(other);
+        public override bool Equals(object? obj) => obj is XYZNumber other && Equals(other);
 
         public bool Equals(XYZNumber other) => this.X == other.X && this.Y == other.Y && this.Z == other.Z;
 
