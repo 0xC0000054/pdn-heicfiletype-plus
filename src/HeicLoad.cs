@@ -18,7 +18,6 @@
 
 using HeicFileTypePlus.Decoding;
 using HeicFileTypePlus.Exif;
-using HeicFileTypePlus.ICCProfile;
 using HeicFileTypePlus.Interop;
 using PaintDotNet;
 using PaintDotNet.Imaging;
