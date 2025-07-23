@@ -125,6 +125,7 @@ Status __stdcall GetPrimaryImage(
     }
 
     info->hasAlpha = heif_image_handle_has_alpha_channel(*primaryImageHandle);
+    info->isAlphaChannelPremultiplied = info->hasAlpha && heif_image_handle_is_premultiplied_alpha(*primaryImageHandle);
 
     return Status::Ok;
 }

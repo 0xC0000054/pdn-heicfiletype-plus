@@ -62,13 +62,32 @@ namespace HeicFileTypePlus.Decoding
             using (IColorContext dp3ColorContext = imagingFactory.CreateColorContext(KnownColorSpace.DisplayP3))
             using (IDirect2DFactory d2dFactory = Direct2DFactory.Create())
             {
-                using (IBitmapSource convertedInput = imagingFactory.CreateFormatConvertedBitmap<ColorPrgba128Float>(input))
-                using (IBitmapSource<ColorPbgra32> dp3Image = PQToColorContext(convertedInput,
-                                                                               imagingFactory,
-                                                                               d2dFactory,
-                                                                               dp3ColorContext))
+                IBitmapSource convertedInput = null;
+
+                try
                 {
-                    dp3Image.CopyPixels(output.AsRegionPtr().Cast<ColorPbgra32>());
+                    PixelFormat pixelFormat = input.PixelFormat;
+
+                    if (pixelFormat == PixelFormats.Rgba128Float || pixelFormat == PixelFormats.Prgba128Float)
+                    {
+                        convertedInput = input.CreateRef();
+                    }
+                    else
+                    {
+                        convertedInput = input.CreateFormatConverter<ColorRgba128Float>();
+                    }
+
+                    using (IBitmapSource<ColorPbgra32> dp3Image = PQToColorContext(convertedInput,
+                                                                                   imagingFactory,
+                                                                                   d2dFactory,
+                                                                                   dp3ColorContext))
+                    {
+                        dp3Image.CopyPixels(output.AsRegionPtr().Cast<ColorPbgra32>());
+                    }
+                }
+                finally
+                {
+                    convertedInput?.Dispose();
                 }
             }
 

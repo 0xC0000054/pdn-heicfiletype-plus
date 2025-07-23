@@ -30,6 +30,8 @@ namespace HeicFileTypePlus.Interop
 
         bool HasAlphaChannel { get; }
 
+        bool IsAlphaChannelPremultiplied { get; }
+
         SafeHeifImageHandle SafeHeifImageHandle { get; }
     }
 }

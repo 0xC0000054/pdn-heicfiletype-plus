@@ -50,6 +50,8 @@ namespace HeicFileTypePlus.Interop
 
         public bool HasAlphaChannel => this.info.hasAlphaChannel;
 
+        public bool IsAlphaChannelPremultiplied => this.info.isAlphaChannelPremultiplied;
+
         public SafeHeifImageHandle SafeHeifImageHandle
         {
             get

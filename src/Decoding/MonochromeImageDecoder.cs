@@ -33,12 +33,18 @@ namespace HeicFileTypePlus.Decoding
         {
             int bitDepth = heifImage.BitDepth;
             bool hasAlpha = heifImage.HasAlphaChannel;
+            bool isAlphaPremultiplied = heifImage.IsAlphaChannelPremultiplied;
 
             if (bitDepth == 8)
             {
                 if (hasAlpha)
                 {
                     SetImageDataGrayAlpha8(heifImage, output);
+
+                    if (isAlphaPremultiplied)
+                    {
+                        output.ConvertFromPremultipliedAlpha();
+                    }
                 }
                 else
                 {
@@ -62,7 +68,19 @@ namespace HeicFileTypePlus.Decoding
                         using (IBitmap<ColorRgba128Float> tempImage = factory.CreateBitmap<ColorRgba128Float>(heifImage.Width, heifImage.Height))
                         {
                             SetImageDataGrayAlpha32(heifImage, tempImage);
-                            HighBitDepthConversion.HdrImageToBgra32(factory, tempImage, hdrFormat, output);
+
+                            if (isAlphaPremultiplied)
+                            {
+                                // Cast the image to ColorPrgba128Float to make Direct2D/WIC handle the conversion to straight alpha.
+                                using (IBitmap<ColorPrgba128Float> asPrgba = tempImage.Cast<ColorPrgba128Float>())
+                                {
+                                    HighBitDepthConversion.HdrImageToBgra32(factory, asPrgba, hdrFormat, output);
+                                }
+                            }
+                            else
+                            {
+                                HighBitDepthConversion.HdrImageToBgra32(factory, tempImage, hdrFormat, output);
+                            }
                         }
                     }
                     else
@@ -81,7 +99,19 @@ namespace HeicFileTypePlus.Decoding
                         using (IBitmap<ColorRgba64> tempImage = factory.CreateBitmap<ColorRgba64>(heifImage.Width, heifImage.Height))
                         {
                             SetImageDataGrayAlpha16(heifImage, tempImage);
-                            HighBitDepthConversion.SdrImageToBgra32(factory, tempImage, output);
+
+                            if (isAlphaPremultiplied)
+                            {
+                                // Cast the image to ColorPrgba64 to make WIC handle the conversion to straight alpha.
+                                using (IBitmap<ColorPrgba64> asPrgba = tempImage.Cast<ColorPrgba64>())
+                                {
+                                    HighBitDepthConversion.SdrImageToBgra32(factory, tempImage, output);
+                                }
+                            }
+                            else
+                            {
+                                HighBitDepthConversion.SdrImageToBgra32(factory, tempImage, output);
+                            }
                         }
                     }
                     else

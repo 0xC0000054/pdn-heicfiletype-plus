@@ -48,6 +48,8 @@ namespace HeicFileTypePlus.Interop
 
         public bool HasAlphaChannel => this.imageHandle.HasAlphaChannel;
 
+        public bool IsAlphaChannelPremultiplied => this.imageHandle.IsAlphaChannelPremultiplied;
+
         public unsafe HeifImageChannel GetChannel(HeifChannel channel)
         {
             byte* scan0 = HeicNative.GetHeifImageChannel(this.image, channel, out int stride);

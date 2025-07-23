@@ -28,5 +28,6 @@ namespace HeicFileTypePlus.Interop
         public int bitDepth;
         public ImageHandleColorProfileType colorProfileType;
         public bool hasAlphaChannel;
+        public bool isAlphaChannelPremultiplied;
     }
 }

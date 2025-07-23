@@ -98,6 +98,7 @@ struct ImageHandleInfo
     int bitDepth;
     ImageHandleColorProfileType colorProfileType;
     bool hasAlpha;
+    bool isAlphaChannelPremultiplied;
 };
 
 struct DecodedImageInfo
