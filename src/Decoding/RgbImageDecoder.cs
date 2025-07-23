@@ -276,6 +276,9 @@ namespace HeicFileTypePlus.Decoding
             byte* blueScan0 = blueChannel.scan0;
             nint blueStride = blueChannel.stride;
 
+            byte* alphaScan0 = alphaChannel.scan0;
+            nint alphaStride = alphaChannel.stride;
+
             int width = image.Width;
             int height = image.Height;
 
@@ -286,6 +289,7 @@ namespace HeicFileTypePlus.Decoding
                 byte* redSrc = redScan0 + (y * redStride);
                 byte* greenSrc = greenScan0 + (y * greenStride);
                 byte* blueSrc = blueScan0 + (y * blueStride);
+                byte* alphaSrc = alphaScan0 + (y * alphaStride);
                 ColorBgra32* dst = destRegion.Rows[y].Ptr;
 
                 for (int x = 0; x < width; x++)
@@ -293,11 +297,12 @@ namespace HeicFileTypePlus.Decoding
                     dst->R = *redSrc;
                     dst->G = *greenSrc;
                     dst->B = *blueSrc;
-                    dst->A = 255;
+                    dst->A = *alphaSrc;
 
                     redSrc++;
                     greenSrc++;
                     blueSrc++;
+                    alphaSrc++;
                     dst++;
                 }
             }
