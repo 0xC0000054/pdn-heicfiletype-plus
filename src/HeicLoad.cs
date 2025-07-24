@@ -34,77 +34,54 @@ namespace HeicFileTypePlus
         {
             Document? doc = null;
 
-            long originalStreamPosition = input.Position;
-
-            try
+            using (IImagingFactory imagingFactory = ImagingFactory.CreateRef())
+            using (HeifFileIO fileIO = new(input, leaveOpen: true))
+            using (SafeHeifContext context = HeicNative.CreateContext())
             {
-                using (IImagingFactory imagingFactory = ImagingFactory.CreateRef())
-                using (HeifFileIO fileIO = new(input, leaveOpen: true))
-                using (SafeHeifContext context = HeicNative.CreateContext())
+                HeicNative.LoadFileIntoContext(context, fileIO);
+
+                HeifImageHandle? primaryImageHandle = null;
+                Surface? surface = null;
+                bool disposeSurface = true;
+
+                try
                 {
-                    HeicNative.LoadFileIntoContext(context, fileIO);
+                    primaryImageHandle = HeicNative.GetPrimaryImage(context);
 
-                    HeifImageHandle? primaryImageHandle = null;
-                    Surface? surface = null;
-                    bool disposeSurface = true;
+                    surface = new Surface(primaryImageHandle.Width, primaryImageHandle.Height);
 
-                    try
+                    using (HeifImage image = primaryImageHandle.Decode(HeifColorSpace.Undefined, HeifChroma.Undefined))
                     {
-                        primaryImageHandle = HeicNative.GetPrimaryImage(context);
-
-                        surface = new Surface(primaryImageHandle.Width, primaryImageHandle.Height);
-
-                        using (HeifImage image = primaryImageHandle.Decode(HeifColorSpace.Undefined, HeifChroma.Undefined))
+                        switch (image.ColorSpace)
                         {
-                            switch (image.ColorSpace)
-                            {
-                                case HeifColorSpace.YCbCr:
-                                    YCbCrImageDecoder.SetImageData(imagingFactory, primaryImageHandle, surface);
-                                    break;
-                                case HeifColorSpace.Rgb:
-                                    RgbImageDecoder.SetImageData(imagingFactory, image, surface);
-                                    break;
-                                case HeifColorSpace.Monochrome:
-                                    MonochromeImageDecoder.SetImageData(imagingFactory, image, surface);
-                                    break;
-                                case HeifColorSpace.Undefined:
-                                default:
-                                    throw new FormatException("Unknown HEIF image color space.");
-                            }
-                        }
-
-                        doc = new Document(surface.Width, surface.Height);
-                        AddMetadataToDocument(doc, primaryImageHandle, imagingFactory);
-                        doc.Layers.Add(Layer.CreateBackgroundLayer(surface, true));
-                        disposeSurface = false;
-                    }
-                    finally
-                    {
-                        primaryImageHandle?.Dispose();
-
-                        if (disposeSurface)
-                        {
-                            surface?.Dispose();
+                            case HeifColorSpace.YCbCr:
+                                YCbCrImageDecoder.SetImageData(imagingFactory, primaryImageHandle, surface);
+                                break;
+                            case HeifColorSpace.Rgb:
+                                RgbImageDecoder.SetImageData(imagingFactory, image, surface);
+                                break;
+                            case HeifColorSpace.Monochrome:
+                                MonochromeImageDecoder.SetImageData(imagingFactory, image, surface);
+                                break;
+                            case HeifColorSpace.Undefined:
+                            default:
+                                throw new FormatException("Unknown HEIF image color space.");
                         }
                     }
+
+                    doc = new Document(surface.Width, surface.Height);
+                    AddMetadataToDocument(doc, primaryImageHandle, imagingFactory);
+                    doc.Layers.Add(Layer.CreateBackgroundLayer(surface, true));
+                    disposeSurface = false;
                 }
-            }
-            catch (NoFtypeBoxException ex)
-            {
-                input.Position = originalStreamPosition;
-
-                if (FormatDetection.IsCommonImageFormat(input))
+                finally
                 {
-                    input.Position = originalStreamPosition;
+                    primaryImageHandle?.Dispose();
 
-                    using (System.Drawing.Image image = System.Drawing.Image.FromStream(input))
+                    if (disposeSurface)
                     {
-                        doc = Document.FromGdipImage(image);
+                        surface?.Dispose();
                     }
-                }
-                else
-                {
-                    throw new FormatException(ex.Message);
                 }
             }
 

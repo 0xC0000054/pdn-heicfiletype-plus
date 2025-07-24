@@ -16,13 +16,17 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+using PaintDotNet;
 using System;
 using System.IO;
+using System.Runtime.CompilerServices;
 
 namespace HeicFileTypePlus
 {
     internal static class FormatDetection
     {
+        private static ReadOnlySpan<byte> BmpFileSignature => new byte[] { 0x42, 0x4D };
+
         private static ReadOnlySpan<byte> Gif87aFileSignature => new byte[] { 0x47, 0x49, 0x46, 0x38, 0x37, 0x61 };
 
         private static ReadOnlySpan<byte> Gif89aFileSignature => new byte[] { 0x47, 0x49, 0x46, 0x38, 0x39, 0x61 };
@@ -35,16 +39,74 @@ namespace HeicFileTypePlus
 
         private static ReadOnlySpan<byte> TiffLittleEndianFileSignature => new byte[] { 0x49, 0x49, 0x2a, 0x00 };
 
-        internal static bool IsCommonImageFormat(Stream stream)
+        /// <summary>
+        /// Attempts to get an <see cref="IFileTypeInfo"/> from the file signature.
+        /// </summary>
+        /// <param name="stream">The stream.</param>
+        /// <returns>
+        ///   An <see cref="IFileTypeInfo"/> instance if the file has the signature of a recognized image format;
+        ///   otherwise, <see langword="null"/>.
+        /// </returns>
+        /// <remarks>
+        /// Some applications may save other common image formats (e.g. JPEG or PNG) with a .heif file extension.
+        /// </remarks>
+        internal static IFileTypeInfo? TryGetFileTypeInfo(Stream stream, IServiceProvider? serviceProvider)
         {
-            Span<byte> bytes = stackalloc byte[8];
+            string name = TryGetFileTypeName(stream);
 
-            stream.ReadExactly(bytes);
+            IFileTypeInfo? fileTypeInfo = null;
 
-            return FileSignatureMatches(bytes, JpegFileSignature)
-                || FileSignatureMatches(bytes, PngFileSignature)
-                || IsGifFileSignature(bytes)
-                || IsTiffFileSignature(bytes);
+            if (!string.IsNullOrEmpty(name))
+            {
+                IFileTypesService? fileTypesService = serviceProvider?.GetService<IFileTypesService>();
+
+                if (fileTypesService != null)
+                {
+                    foreach (IFileTypeInfo item in fileTypesService.FileTypes)
+                    {
+                        if (item.Name.Equals(name, StringComparison.OrdinalIgnoreCase)
+                            && item.Options.SupportsLoading)
+                        {
+                            fileTypeInfo = item;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            return fileTypeInfo;
+        }
+
+        [SkipLocalsInit]
+        private static string TryGetFileTypeName(Stream stream)
+        {
+            string name = string.Empty;
+
+            Span<byte> signature = stackalloc byte[8];
+            stream.ReadExactly(signature);
+
+            if (FileSignatureMatches(signature, JpegFileSignature))
+            {
+                name = "JPEG";
+            }
+            else if (FileSignatureMatches(signature, PngFileSignature))
+            {
+                name = "PNG";
+            }
+            else if (FileSignatureMatches(signature, BmpFileSignature))
+            {
+                name = "BMP";
+            }
+            else if (IsGifFileSignature(signature))
+            {
+                name = "GIF";
+            }
+            else if (IsTiffFileSignature(signature))
+            {
+                name = "TIFF";
+            }
+
+            return name;
         }
 
         private static bool FileSignatureMatches(ReadOnlySpan<byte> data, ReadOnlySpan<byte> signature)

@@ -24,18 +24,20 @@ using System.IO;
 
 namespace HeicFileTypePlus
 {
-    public sealed class HeicFileTypePlusFactory : IFileTypeFactory
+    public sealed class HeicFileTypePlusFactory : IFileTypeFactory2
     {
-        public FileType[] GetFileTypeInstances()
+        public FileType[] GetFileTypeInstances(IFileTypeHost host)
         {
-            return new[] { new HeicFileTypePlusPlugin() };
+            return new[] { new HeicFileTypePlusPlugin(host) };
         }
     }
 
     [PluginSupportInfo(typeof(PluginSupportInfo))]
     internal sealed class HeicFileTypePlusPlugin : PropertyBasedFileType
     {
-        internal HeicFileTypePlusPlugin()
+        private readonly IServiceProvider serviceProvider;
+
+        internal HeicFileTypePlusPlugin(IFileTypeHost host)
             : base(
                 "HEIC",
                 new FileTypeOptions
@@ -46,6 +48,7 @@ namespace HeicFileTypePlus
                     SupportsLayers = false
                 })
         {
+            this.serviceProvider = host.Services;
         }
 
         private enum PropertyNames
@@ -194,7 +197,32 @@ namespace HeicFileTypePlus
         /// </summary>
         protected override Document OnLoad(Stream input)
         {
-            return HeicLoad.Load(input);
+            Document doc;
+
+            long originalStreamPosition = input.Position;
+
+            try
+            {
+                doc = HeicLoad.Load(input);
+            }
+            catch (NoFtypeBoxException ex)
+            {
+                input.Position = originalStreamPosition;
+
+                IFileTypeInfo? fileTypeInfo = FormatDetection.TryGetFileTypeInfo(input, this.serviceProvider);
+
+                if (fileTypeInfo != null)
+                {
+                    input.Position = originalStreamPosition;
+                    doc = fileTypeInfo.GetInstance().Load(input);
+                }
+                else
+                {
+                    throw new FormatException(ex.Message);
+                }
+            }
+
+            return doc;
         }
     }
 }
