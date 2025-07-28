@@ -35,6 +35,8 @@ namespace HeicFileTypePlus
     [PluginSupportInfo(typeof(PluginSupportInfo))]
     internal sealed class HeicFileTypePlusPlugin : PropertyBasedFileType
     {
+        private static readonly string[] FileExtensions = [".heic", ".heif", ".hif"];
+
         private readonly IServiceProvider serviceProvider;
 
         internal HeicFileTypePlusPlugin(IFileTypeHost host)
@@ -42,8 +44,8 @@ namespace HeicFileTypePlus
                 "HEIC",
                 new FileTypeOptions
                 {
-                    LoadExtensions = new string[] { ".heic", ".heif", ".hif" },
-                    SaveExtensions = new string[] { ".heic", ".heif", ".hif" },
+                    LoadExtensions = FileExtensions,
+                    SaveExtensions = FileExtensions,
                     SupportsCancellation = true,
                     SupportsLayers = false
                 })
