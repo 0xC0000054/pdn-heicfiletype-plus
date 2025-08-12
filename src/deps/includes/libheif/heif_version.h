@@ -28,11 +28,11 @@
 #define LIBHEIF_HEIF_VERSION_H
 
 /* Numeric representation of the version */
-#define LIBHEIF_NUMERIC_VERSION ((1<<24) | (18<<16) | (1<<8) | 0)
+#define LIBHEIF_NUMERIC_VERSION ((1<<24) | (20<<16) | (2<<8) | 0)
 
 /* Version string */
-#define LIBHEIF_VERSION "1.18.1"
+#define LIBHEIF_VERSION "1.20.2"
 
-#define LIBHEIF_PLUGIN_DIRECTORY "C:/Program Files/libheif/lib/libheif"
+#define LIBHEIF_PLUGIN_DIRECTORY "C:/Program Files (x86)/libheif/lib/libheif"
 
 #endif  // LIBHEIF_HEIF_VERSION_H
